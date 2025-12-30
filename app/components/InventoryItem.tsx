@@ -40,16 +40,16 @@ export default function InventoryItem({
             </span>
           </div>
           <div className="mt-2 space-y-1">
-            <p className="text-sm text-gray-600">
+            <p className="text-[16px] text-gray-600">
               <span className="font-medium">კლიენტი:</span> {Name}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-[16px] text-gray-600">
               <span className="font-medium">სრული სახელი:</span> {fullName}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-[16px] text-gray-600">
               <span className="font-medium">ტელეფონი:</span> {phone}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-[16px] text-gray-600">
               <span className="font-medium">ელფოსტა:</span> {email}
             </p>
             <p className="text-xs text-gray-400 mt-2">
@@ -61,7 +61,7 @@ export default function InventoryItem({
           {onEdit && (
             <button
               onClick={() => onEdit(id)}
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-[16px]"
             >
               რედაქტირება
             </button>
@@ -69,7 +69,7 @@ export default function InventoryItem({
           {onDelete && (
             <button
               onClick={() => onDelete(id)}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-[16px]"
             >
               წაშლა
             </button>

@@ -71,7 +71,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
           ნივთის აღწერა <span className="text-red-500">*</span>
         </label>
         <input
@@ -84,12 +84,12 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           placeholder="მაგ: ფეხსაცმელი"
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+          <p className="mt-1 text-[16px] text-red-500">{errors.title}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
           კლიენტის სახელი <span className="text-red-500">*</span>
         </label>
         <input
@@ -102,12 +102,12 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           placeholder="მაგ: გიორგი"
         />
         {errors.Name && (
-          <p className="mt-1 text-sm text-red-500">{errors.Name}</p>
+          <p className="mt-1 text-[16px] text-red-500">{errors.Name}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
           კლიენტის გვარი <span className="text-red-500">*</span>
         </label>
         <input
@@ -120,12 +120,12 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           placeholder="მაგ: გიორგი ბერიძე"
         />
         {errors.fullName && (
-          <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
+          <p className="mt-1 text-[16px] text-red-500">{errors.fullName}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
           ტელეფონი <span className="text-red-500">*</span>
         </label>
         <input
@@ -138,12 +138,12 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           placeholder="ტელეფონის ნომერი"
         />
         {errors.phone && (
-          <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+          <p className="mt-1 text-[16px] text-red-500">{errors.phone}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
           ელფოსტა <span className="text-red-500">*</span>
         </label>
         <input
@@ -156,7 +156,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           placeholder="example@email.com"
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+          <p className="mt-1 text-[16px] text-red-500">{errors.email}</p>
         )}
       </div>
 

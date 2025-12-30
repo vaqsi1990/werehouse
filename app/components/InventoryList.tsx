@@ -49,7 +49,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
           />
         </svg>
         <p className="text-gray-500 text-lg">ინვენტარი ცარიელია</p>
-        <p className="text-gray-400 text-sm mt-2">დაამატეთ პროდუქტები ინვენტარში</p>
+        <p className="text-gray-400 text-[16px] mt-2">დაამატეთ პროდუქტები ინვენტარში</p>
       </div>
     );
   }
