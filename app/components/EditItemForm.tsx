@@ -1,23 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { itemSchema, type ItemFormData } from "../lib/validations";
 import { z } from "zod";
 
-interface AddProductFormProps {
-  onAdd: (product: ItemFormData) => void;
+interface Item {
+  id: string;
+  title: string;
+  Name: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+}
+
+interface EditItemFormProps {
+  item: Item;
+  onUpdate: (id: string, data: ItemFormData) => void;
   onClose?: () => void;
 }
 
-export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) {
+export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormProps) {
   const [formData, setFormData] = useState({
-    title: "",
-    Name: "",
-    fullName: "",
-    phone: "",
-    email: "",
+    title: item.title,
+    Name: item.Name,
+    fullName: item.fullName,
+    phone: item.phone,
+    email: item.email,
+    status: item.status,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setFormData({
+      title: item.title,
+      Name: item.Name,
+      fullName: item.fullName,
+      phone: item.phone,
+      email: item.email,
+      status: item.status,
+    });
+  }, [item]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -35,22 +58,8 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
     e.preventDefault();
     
     try {
-      const validatedData = itemSchema.parse({
-        ...formData,
-        status: "RECEIVED", // შემოსული ნივთები default-ად RECEIVED
-      });
-      
-      onAdd(validatedData);
-      
-      // Reset form
-      setFormData({
-        title: "",
-        Name: "",
-        fullName: "",
-        phone: "",
-        email: "",
-      });
-      setErrors({});
+      const validatedData = itemSchema.parse(formData);
+      onUpdate(item.id, validatedData);
       
       if (onClose) {
         onClose();
@@ -160,6 +169,27 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
         )}
       </div>
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          სტატუსი <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.status}
+          onChange={(e) => handleChange("status", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            errors.status ? "border-red-500" : "border-gray-300"
+          }`}
+        >
+          <option value="RECEIVED">შემოსული</option>
+          <option value="IN_TRANSIT">გზაშია</option>
+          <option value="IN_WAREHOUSE">საწყობშია</option>
+          <option value="RELEASED">გაცემულია</option>
+        </select>
+        {errors.status && (
+          <p className="mt-1 text-sm text-red-500">{errors.status}</p>
+        )}
+      </div>
+
       <div className="flex gap-3 pt-2">
         <button
           type="button"
@@ -172,9 +202,10 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="submit"
           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
-          დამატება
+          განახლება
         </button>
       </div>
     </form>
   );
 }
+

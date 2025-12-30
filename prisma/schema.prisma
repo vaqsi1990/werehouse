@@ -28,6 +28,7 @@ model Item {
 }
 
 enum ItemStatus {
+  RECEIVED       // შემოსული
   IN_TRANSIT     // გზაშია
   IN_WAREHOUSE   // საწყობშია
   RELEASED       // გაცემულია
