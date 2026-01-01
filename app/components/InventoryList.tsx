@@ -1,10 +1,11 @@
 interface Item {
   id: string;
-  title: string;
+  productNumber: string;
   Name: string;
   fullName: string;
   phone: string;
-  email: string;
+  city: string;
+  address: string;
   status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
   createdAt: string;
   updatedAt: string;
@@ -60,7 +61,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
       <div className="space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-semibold text-black text-[16px] mb-1">{item.title}</h3>
+            <h3 className="font-semibold text-black text-[16px] mb-1">{item.productNumber}</h3>
             <p className="text-black text-[16px]">{item.Name} {item.fullName}</p>
           </div>
           <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusColors[item.status]}`}>
@@ -74,8 +75,12 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
             <span className="text-black">{item.phone}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">ელფოსტა:</span>
-            <span className="text-black break-all">{item.email}</span>
+            <span className="text-black">ქალაქი:</span>
+            <span className="text-black">{item.city}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-black">მისამართი:</span>
+            <span className="text-black break-all">{item.address}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-black">თარიღი:</span>
@@ -141,7 +146,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    ნივთის აღწერა
+                    პროდუქტის ნომერი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     კლიენტის სახელი
@@ -152,8 +157,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     ტელეფონი
                   </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
+                    ქალაქი
+                  </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[180px]">
-                    ელფოსტა
+                    მისამართი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     სტატუსი
@@ -171,7 +179,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  font-medium text-black  ">
-                        {item.title}
+                        {item.productNumber}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
@@ -190,8 +198,13 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
-                      <div className="text-[15px]  text-black " title={item.email}>
-                        {item.email}
+                      <div className="text-[15px]  text-black ">
+                        {item.city}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black break-all" title={item.address}>
+                        {item.address}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">

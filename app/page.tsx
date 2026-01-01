@@ -13,11 +13,12 @@ import type { ItemFormData } from "./lib/validations";
 
 interface Item {
   id: string;
-  title: string;
+  productNumber: string;
   Name: string;
   fullName: string;
   phone: string;
-  email: string;
+  city: string;
+  address: string;
   status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
   smsSent: boolean;
   createdAt: string;
@@ -95,10 +96,10 @@ export default function Home() {
 
   const handleDeleteProduct = async (id: string) => {
     const item = items.find((i) => i.id === id);
-    const itemTitle = item?.title || "ნივთი";
+    const itemProductNumber = item?.productNumber || "ნივთი";
     
     const confirmed = window.confirm(
-      `დარწმუნებული ხართ რომ გსურთ წაშალოთ "${itemTitle}"?`
+      `დარწმუნებული ხართ რომ გსურთ წაშალოთ "${itemProductNumber}"?`
     );
     
     if (!confirmed) {
@@ -112,7 +113,7 @@ export default function Home() {
 
       if (response.ok) {
         setItems((prev) => prev.filter((item) => item.id !== id));
-        toast.success(`"${itemTitle}" წარმატებით წაიშალა`);
+        toast.success(`"${itemProductNumber}" წარმატებით წაიშალა`);
       } else {
         console.error("Failed to delete item");
         toast.error("შეცდომა: ნივთის წაშლა ვერ მოხერხდა");
@@ -162,7 +163,7 @@ export default function Home() {
   const handleStatusChange = async (id: string, newStatus: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED") => {
     try {
       const item = items.find((i) => i.id === id);
-      const itemTitle = item?.title || "ნივთი";
+      const itemProductNumber = item?.productNumber || "ნივთი";
       
       const statusLabels: Record<string, string> = {
         RECEIVED: "შემოსული",
@@ -188,7 +189,7 @@ export default function Home() {
         setItems((prev) =>
           prev.map((item) => (item.id === id ? updatedItem : item))
         );
-        toast.success(`"${itemTitle}"-ის სტატუსი შეიცვალა: ${statusLabels[newStatus]}`);
+        toast.success(`"${itemProductNumber}"-ის სტატუსი შეიცვალა: ${statusLabels[newStatus]}`);
       } else {
         const errorText = await response.text();
         let errorData;

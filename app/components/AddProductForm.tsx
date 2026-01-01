@@ -11,11 +11,12 @@ interface AddProductFormProps {
 
 export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) {
   const [formData, setFormData] = useState({
-    title: "",
+    productNumber: "",
     Name: "",
     fullName: "",
     phone: "",
-    email: "",
+    city: "",
+    address: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -44,11 +45,12 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
       
       // Reset form
       setFormData({
-        title: "",
+        productNumber: "",
         Name: "",
         fullName: "",
         phone: "",
-        email: "",
+        city: "",
+        address: "",
       });
       setErrors({});
       
@@ -72,19 +74,19 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ნივთის აღწერა <span className="text-red-500">*</span>
+          პროდუქტის ნომერი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.title}
-          onChange={(e) => handleChange("title", e.target.value)}
+          value={formData.productNumber}
+          onChange={(e) => handleChange("productNumber", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.title ? "border-red-500" : "border-gray-300"
+            errors.productNumber ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: ფეხსაცმელი"
+          placeholder="მაგ: PRD-001"
         />
-        {errors.title && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.title}</p>
+        {errors.productNumber && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
         )}
       </div>
 
@@ -144,19 +146,37 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ელფოსტა <span className="text-red-500">*</span>
+          ქალაქი <span className="text-red-500">*</span>
         </label>
         <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange("email", e.target.value)}
+          type="text"
+          value={formData.city}
+          onChange={(e) => handleChange("city", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.email ? "border-red-500" : "border-gray-300"
+            errors.city ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="example@email.com"
+          placeholder="მაგ: თბილისი"
         />
-        {errors.email && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.email}</p>
+        {errors.city && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          მისამართი <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.address}
+          onChange={(e) => handleChange("address", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            errors.address ? "border-red-500" : "border-gray-300"
+          }`}
+          placeholder="მაგ: რუსთაველის გამზირი 1"
+        />
+        {errors.address && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
         )}
       </div>
 

@@ -6,11 +6,12 @@ import { z } from "zod";
 
 interface Item {
   id: string;
-  title: string;
+  productNumber: string;
   Name: string;
   fullName: string;
   phone: string;
-  email: string;
+  city: string;
+  address: string;
   status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
 }
 
@@ -22,22 +23,24 @@ interface EditItemFormProps {
 
 export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormProps) {
   const [formData, setFormData] = useState({
-    title: item.title,
+    productNumber: item.productNumber,
     Name: item.Name,
     fullName: item.fullName,
     phone: item.phone,
-    email: item.email,
+    city: item.city,
+    address: item.address,
     status: item.status,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData({
-      title: item.title,
+      productNumber: item.productNumber,
       Name: item.Name,
       fullName: item.fullName,
       phone: item.phone,
-      email: item.email,
+      city: item.city,
+      address: item.address,
       status: item.status,
     });
   }, [item]);
@@ -81,19 +84,19 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ნივთის აღწერა <span className="text-red-500">*</span>
+          პროდუქტის ნომერი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.title}
-          onChange={(e) => handleChange("title", e.target.value)}
+          value={formData.productNumber}
+          onChange={(e) => handleChange("productNumber", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.title ? "border-red-500" : "border-gray-300"
+            errors.productNumber ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: ფეხსაცმელი"
+          placeholder="მაგ: PRD-001"
         />
-        {errors.title && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.title}</p>
+        {errors.productNumber && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
         )}
       </div>
 
@@ -153,19 +156,37 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ელფოსტა <span className="text-red-500">*</span>
+          ქალაქი <span className="text-red-500">*</span>
         </label>
         <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange("email", e.target.value)}
+          type="text"
+          value={formData.city}
+          onChange={(e) => handleChange("city", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.email ? "border-red-500" : "border-gray-300"
+            errors.city ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="example@email.com"
+          placeholder="მაგ: თბილისი"
         />
-        {errors.email && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.email}</p>
+        {errors.city && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          მისამართი <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.address}
+          onChange={(e) => handleChange("address", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            errors.address ? "border-red-500" : "border-gray-300"
+          }`}
+          placeholder="მაგ: რუსთაველის გამზირი 1"
+        />
+        {errors.address && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
         )}
       </div>
 

@@ -1,10 +1,11 @@
 interface InventoryItemProps {
   id: string;
-  title: string;
+  productNumber: string;
   Name: string;
   fullName: string;
   phone: string;
-  email: string;
+  city: string;
+  address: string;
   status: "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
   createdAt: string;
   onEdit?: (id: string) => void;
@@ -13,11 +14,12 @@ interface InventoryItemProps {
 
 export default function InventoryItem({
   id,
-  title,
+  productNumber,
   Name,
   fullName,
   phone,
-  email,
+  city,
+  address,
   status,
   createdAt,
   onEdit,
@@ -34,7 +36,7 @@ export default function InventoryItem({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{productNumber}</h3>
             <span className="bg-blue-100 text-blue-600 text-xs font-medium px-2 py-1 rounded">
               {statusLabels[status]}
             </span>
@@ -50,7 +52,10 @@ export default function InventoryItem({
               <span className="font-medium">ტელეფონი:</span> {phone}
             </p>
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">ელფოსტა:</span> {email}
+              <span className="font-medium">ქალაქი:</span> {city}
+            </p>
+            <p className="text-[16px] text-gray-600">
+              <span className="font-medium">მისამართი:</span> {address}
             </p>
             <p className="text-xs text-gray-400 mt-2">
               შექმნილია: {new Date(createdAt).toLocaleDateString("ka-GE")}

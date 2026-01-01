@@ -3,11 +3,12 @@ import { z } from "zod";
 export const ItemStatusEnum = z.enum(["RECEIVED", "IN_TRANSIT", "IN_WAREHOUSE", "RELEASED"]);
 
 export const itemSchema = z.object({
-  title: z.string().min(1, "ნივთის აღწერა სავალდებულოა"),
+  productNumber: z.string().min(1, "პროდუქტის ნომერი სავალდებულოა"),
   Name: z.string().min(1, "კლიენტის სახელი სავალდებულოა"),
   fullName: z.string().min(1, "კლიენტის გვარი სავალდებულოა"),
   phone: z.string().min(1, "ტელეფონი სავალდებულოა"),
-  email: z.string().email("არასწორი ელფოსტის ფორმატი"),
+  city: z.string().min(1, "ქალაქი სავალდებულოა"),
+  address: z.string().min(1, "მისამართი სავალდებულოა"),
   status: ItemStatusEnum.default("RECEIVED"),
 });
 
