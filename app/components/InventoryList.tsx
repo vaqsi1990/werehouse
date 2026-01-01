@@ -127,7 +127,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden w-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden w-full max-w-full">
       {/* Mobile Card View */}
       <div className="lg:hidden p-4">
         {items.map((item) => (
@@ -136,10 +136,8 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block w-full overflow-x-auto">
-        <div className="inline-block min-w-full align-middle">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+      <div className="hidden lg:block w-full overflow-x-auto max-w-full">
+        <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
@@ -249,8 +247,6 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
       </div>
     </div>
   );
