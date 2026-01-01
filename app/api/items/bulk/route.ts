@@ -71,3 +71,28 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    // Delete all items
+    const result = await prisma.item.deleteMany({});
+    
+    console.log(`Successfully deleted ${result.count} items`);
+
+    return NextResponse.json(
+      { 
+        message: "All items deleted successfully",
+        count: result.count,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error deleting items:", error);
+    return NextResponse.json(
+      { 
+        error: "Failed to delete items",
+        message: error?.message || "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}

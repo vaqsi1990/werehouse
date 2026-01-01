@@ -154,6 +154,42 @@ export default function Home() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    const totalCount = filteredItems.length;
+    
+    if (totalCount === 0) {
+      toast.info("წასაშლელი ნივთები არ არის");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `დარწმუნებული ხართ რომ გსურთ წაშალოთ ყველა ${totalCount} ნივთი? ეს მოქმედება შეუქცევადია!`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/items/bulk", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setItems([]);
+        toast.success(`ყველა ${result.count} ნივთი წარმატებით წაიშალა`);
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Failed to delete all items:", errorData);
+        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთების წაშლა ვერ მოხერხდა"}`);
+      }
+    } catch (error) {
+      console.error("Error deleting all items:", error);
+      toast.error("შეცდომა: ნივთების წაშლა ვერ მოხერხდა");
+    }
+  };
+
   const handleEditProduct = (id: string) => {
     const item = items.find((i) => i.id === id);
     if (item) {
@@ -380,27 +416,51 @@ export default function Home() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ნივთების სია</h2>
+              <div className="flex items-center gap-3">
               {activeSection === "received" && (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  ახალი ნივთის დამატება
-                </button>
-              )}
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    ახალი ნივთის დამატება
+                  </button>
+                )}
+                {filteredItems.length > 0 && (
+                  <button
+                    onClick={handleDeleteAll}
+                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    ყველას წაშლა
+                  </button>
+                )}
+             
+              </div>
             </div>
             <InventoryList
               items={filteredItems}
