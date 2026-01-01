@@ -80,7 +80,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.productNumber}
           onChange={(e) => handleChange("productNumber", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.productNumber ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: PRD-001"
@@ -98,7 +98,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.Name}
           onChange={(e) => handleChange("Name", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.Name ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: გიორგი"
@@ -116,7 +116,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.fullName}
           onChange={(e) => handleChange("fullName", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.fullName ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: გიორგი ბერიძე"
@@ -134,7 +134,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.phone}
           onChange={(e) => handleChange("phone", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.phone ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="ტელეფონის ნომერი"
@@ -152,7 +152,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.city}
           onChange={(e) => handleChange("city", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.city ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: თბილისი"
@@ -170,7 +170,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           type="text"
           value={formData.address}
           onChange={(e) => handleChange("address", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.address ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: რუსთაველის გამზირი 1"

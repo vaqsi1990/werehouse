@@ -21,14 +21,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log("Creating item with data:", body);
     const item = await prisma.item.create({
       data: body,
     });
+    console.log("Item created successfully:", item);
     return NextResponse.json(item, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating item:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+    });
     return NextResponse.json(
-      { error: "Failed to create item" },
+      { 
+        error: "Failed to create item",
+        message: error?.message || "Unknown error",
+        code: error?.code || "UNKNOWN",
+      },
       { status: 500 }
     );
   }

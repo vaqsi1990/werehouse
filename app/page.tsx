@@ -71,6 +71,7 @@ export default function Home() {
 
   const handleAddProduct = async (newProduct: ItemFormData) => {
     try {
+      console.log("Submitting product:", newProduct);
       const response = await fetch("/api/items", {
         method: "POST",
         headers: {
@@ -85,8 +86,9 @@ export default function Home() {
         setIsModalOpen(false);
         toast.success("ნივთი წარმატებით დაემატა!");
       } else {
-        console.error("Failed to create item");
-        toast.error("შეცდომა: ნივთის დამატება ვერ მოხერხდა");
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Failed to create item:", errorData);
+        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთის დამატება ვერ მოხერხდა"}`);
       }
     } catch (error) {
       console.error("Error creating item:", error);
