@@ -26,10 +26,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
   };
 
   const statusColors: Record<string, string> = {
-    RECEIVED: "bg-purple-100 text-purple-800",
-    IN_TRANSIT: "bg-yellow-100 text-yellow-800",
-    IN_WAREHOUSE: "bg-blue-100 text-blue-800",
-    RELEASED: "bg-green-100 text-green-800",
+    RECEIVED: "bg-white text-black border border-black",
+    IN_TRANSIT: "bg-white text-black border border-black",
+    IN_WAREHOUSE: "bg-white text-black border border-black",
+    RELEASED: "bg-white text-black border border-black",
   };
 
   if (items.length === 0) {
@@ -48,114 +48,206 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
             d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
-        <p className="text-gray-500 text-lg">ინვენტარი ცარიელია</p>
-        <p className="text-gray-400 text-[16px] mt-2">დაამატეთ პროდუქტები ინვენტარში</p>
+        <p className="text-black text-[16px]">ინვენტარი ცარიელია</p>
+        <p className="text-black text-[16px] mt-2">დაამატეთ პროდუქტები ინვენტარში</p>
       </div>
     );
   }
 
+  // Mobile card view
+  const MobileCardView = ({ item }: { item: Item }) => (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="font-semibold text-black text-[16px] mb-1">{item.title}</h3>
+            <p className="text-black text-[16px]">{item.Name} {item.fullName}</p>
+          </div>
+          <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusColors[item.status]}`}>
+            {statusLabels[item.status]}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-2 text-[16px]">
+          <div className="flex items-center gap-2">
+            <span className="text-black">ტელეფონი:</span>
+            <span className="text-black">{item.phone}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-black">ელფოსტა:</span>
+            <span className="text-black break-all">{item.email}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-black">თარიღი:</span>
+            <span className="text-black">{new Date(item.createdAt).toLocaleDateString("ka-GE")}</span>
+          </div>
+        </div>
+
+        {onStatusChange && (
+          <div>
+            <label className="block text-[16px] text-black mb-1">სტატუსის შეცვლა</label>
+            <select
+              value={item.status}
+              onChange={(e) => {
+                const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+                onStatusChange(item.id, newStatus);
+              }}
+              className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
+            >
+              <option value="RECEIVED">შემოსული</option>
+              <option value="IN_TRANSIT">გზაშია</option>
+              <option value="IN_WAREHOUSE">საწყობშია</option>
+              <option value="RELEASED">გაცემულია</option>
+            </select>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(item.id)}
+              className="text-black hover:text-gray-800 transition-colors text-[16px] font-medium"
+            >
+              რედაქტირება
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(item.id)}
+              className="text-black hover:text-gray-800 transition-colors text-[16px] font-medium"
+            >
+              წაშლა
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                ნივთის აღწერა
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                კლიენტის სახელი
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-            კლიენტის   გვარი
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                ტელეფონი
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                ელფოსტა
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                სტატუსი
-              </th>
-              <th className="px-6 py-3 text-left md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                თარიღი
-              </th>
-              <th className="px-6 py-3 text-right md:text-[18px] text-[16px] font-medium text-gray-500 uppercase tracking-wider">
-                მოქმედებები
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] font-medium text-gray-900">{item.title}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] text-gray-900">{item.Name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] text-gray-900">{item.fullName}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] text-gray-900">{item.phone}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] text-gray-900">{item.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {onStatusChange ? (
-                    <select
-                      value={item.status}
-                      onChange={(e) => {
-                        const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
-                        onStatusChange(item.id, newStatus);
-                      }}
-                      className={`px-3 py-1 md:text-[18px] text-[16px] font-semibold rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
-                    >
-                      <option value="RECEIVED">შემოსული</option>
-                      <option value="IN_TRANSIT">გზაშია</option>
-                      <option value="IN_WAREHOUSE">საწყობშია</option>
-                      <option value="RELEASED">გაცემულია</option>
-                    </select>
-                  ) : (
-                    <span
-                      className={`inline-flex px-2 py-1 md:text-[18px] text-[16px] font-semibold rounded-full ${statusColors[item.status]}`}
-                    >
-                      {statusLabels[item.status]}
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="md:text-[18px] text-[16px] text-gray-500">
-                    {new Date(item.createdAt).toLocaleDateString("ka-GE")}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right md:text-[18px] text-[16px] font-medium">
-                  <div className="flex items-center justify-end gap-2">
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit(item.id)}
-                        className="text-blue-600 hover:text-blue-900 transition-colors"
-                      >
-                        რედაქტირება
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={() => onDelete(item.id)}
-                        className="text-red-600 hover:text-red-900 transition-colors"
-                      >
-                        წაშლა
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="bg-white rounded-lg shadow-md overflow-hidden w-full">
+      {/* Mobile Card View */}
+      <div className="lg:hidden p-4">
+        {items.map((item) => (
+          <MobileCardView key={item.id} item={item} />
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block w-full overflow-x-auto">
+        <div className="inline-block min-w-full align-middle">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
+                    ნივთის აღწერა
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
+                    კლიენტის სახელი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
+                    კლიენტის გვარი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
+                    ტელეფონი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[180px]">
+                    ელფოსტა
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
+                    სტატუსი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
+                    თარიღი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
+                    მოქმედებები
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {items.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  font-medium text-black  ">
+                        {item.title}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black ">
+                        {item.Name}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black ">
+                        {item.fullName}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black break-all">
+                        {item.phone}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black " title={item.email}>
+                        {item.email}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      {onStatusChange ? (
+                        <select
+                          value={item.status}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+                            onStatusChange(item.id, newStatus);
+                          }}
+                          className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusColors[item.status]} w-full max-w-[140px]`}
+                        >
+                          <option value="RECEIVED">შემოსული</option>
+                          <option value="IN_TRANSIT">გზაშია</option>
+                          <option value="IN_WAREHOUSE">საწყობშია</option>
+                          <option value="RELEASED">გაცემულია</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex px-2 py-1 text-[15px] font-semibold rounded-full ${statusColors[item.status]}`}
+                        >
+                          {statusLabels[item.status]}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px] text-black whitespace-nowrap">
+                        {new Date(item.createdAt).toLocaleDateString("ka-GE")}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 flex-wrap">
+                        {onEdit && (
+                          <button
+                            onClick={() => onEdit(item.id)}
+                            className="text-black hover:text-gray-800 transition-colors text-[15px] whitespace-nowrap"
+                          >
+                            რედაქტირება
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={() => onDelete(item.id)}
+                            className="text-black hover:text-gray-800 transition-colors text-[15px] whitespace-nowrap"
+                          >
+                            წაშლა
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

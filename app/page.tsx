@@ -31,6 +31,7 @@ export default function Home() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Map activeSection to Prisma status
   const getStatusForSection = (section: string): "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED" | null => {
@@ -244,13 +245,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      <div className="flex-1 ml-72">
-        <Header />
-        <main className="p-6">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">{getSectionTitle()}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Sidebar 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      <div className={`flex-1 w-full transition-all duration-300 ${isSidebarOpen ? "lg:ml-56" : "lg:ml-0"}`}>
+        <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <main className="p-4 ">
+          <div className="mb-6 lg:mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               <StatsCard
                 title="სულ ნივთები"
                 value={totalItems}
