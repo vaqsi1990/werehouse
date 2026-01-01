@@ -96,6 +96,34 @@ export default function Home() {
     }
   };
 
+  const handleBulkAddProducts = async (products: ItemFormData[]) => {
+    try {
+      console.log("Submitting bulk products:", products);
+      const response = await fetch("/api/items/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items: products }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const newItems = result.items || [];
+        setItems((prev) => [...newItems, ...prev]);
+        setIsModalOpen(false);
+        toast.success(`${newItems.length} ნივთი წარმატებით დაემატა!`);
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Failed to create items:", errorData);
+        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთების დამატება ვერ მოხერხდა"}`);
+      }
+    } catch (error) {
+      console.error("Error creating items:", error);
+      toast.error("შეცდომა: ნივთების დამატება ვერ მოხერხდა");
+    }
+  };
+
   const handleDeleteProduct = async (id: string) => {
     const item = items.find((i) => i.id === id);
     const itemProductNumber = item?.productNumber || "ნივთი";
@@ -388,7 +416,11 @@ export default function Home() {
               onClose={() => setIsModalOpen(false)}
               title="ახალი ნივთის დამატება"
             >
-              <AddProductForm onAdd={handleAddProduct} onClose={() => setIsModalOpen(false)} />
+              <AddProductForm 
+                onAdd={handleAddProduct} 
+                onBulkAdd={handleBulkAddProducts}
+                onClose={() => setIsModalOpen(false)} 
+              />
             </Modal>
           )}
 
