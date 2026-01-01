@@ -26,10 +26,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
   };
 
   const statusColors: Record<string, string> = {
-    RECEIVED: "bg-white text-black border border-black",
-    IN_TRANSIT: "bg-white text-black border border-black",
-    IN_WAREHOUSE: "bg-white text-black border border-black",
-    RELEASED: "bg-white text-black border border-black",
+    RECEIVED: "bg-white text-black border-1 border-black",
+    IN_TRANSIT: "bg-white text-black border-1 border-black",
+    IN_WAREHOUSE: "bg-white text-black border-1 border-black",
+    RELEASED: "bg-white text-black border-1 border-black",
   };
 
   if (items.length === 0) {
@@ -92,7 +92,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                 const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
                 onStatusChange(item.id, newStatus);
               }}
-              className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
+              className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
             >
               <option value="RECEIVED">შემოსული</option>
               <option value="IN_TRANSIT">გზაშია</option>
