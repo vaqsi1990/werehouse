@@ -83,7 +83,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.productNumber ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: PRD-001"
+        
         />
         {errors.productNumber && (
           <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
@@ -101,7 +101,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.Name ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: გიორგი"
+        
         />
         {errors.Name && (
           <p className="mt-1 text-[16px] text-red-500">{errors.Name}</p>
@@ -119,7 +119,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.fullName ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: გიორგი ბერიძე"
+       
         />
         {errors.fullName && (
           <p className="mt-1 text-[16px] text-red-500">{errors.fullName}</p>
@@ -137,7 +137,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.phone ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="ტელეფონის ნომერი"
+      
         />
         {errors.phone && (
           <p className="mt-1 text-[16px] text-red-500">{errors.phone}</p>
@@ -155,7 +155,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.city ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: თბილისი"
+      
         />
         {errors.city && (
           <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
@@ -173,7 +173,7 @@ export default function AddProductForm({ onAdd, onClose }: AddProductFormProps) 
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.address ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: რუსთაველის გამზირი 1"
+     
         />
         {errors.address && (
           <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>

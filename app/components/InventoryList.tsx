@@ -82,10 +82,6 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
             <span className="text-black">მისამართი:</span>
             <span className="text-black break-all">{item.address}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-black">თარიღი:</span>
-            <span className="text-black">{new Date(item.createdAt).toLocaleDateString("ka-GE")}</span>
-          </div>
         </div>
 
         {onStatusChange && (
@@ -107,11 +103,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
           {onEdit && (
             <button
               onClick={() => onEdit(item.id)}
-              className="text-black hover:text-gray-800 transition-colors text-[16px] font-medium"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[16px]"
             >
               რედაქტირება
             </button>
@@ -119,9 +115,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
           {onDelete && (
             <button
               onClick={() => onDelete(item.id)}
-              className="text-black hover:text-gray-800 transition-colors text-[16px] font-medium"
+              className="bg-red-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-[16px] w-10 h-10 flex items-center justify-center"
+              title="წაშლა"
             >
-              წაშლა
+              ×
             </button>
           )}
         </div>
@@ -165,9 +162,6 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     სტატუსი
-                  </th>
-                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
-                    თარიღი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     მოქმედებები
@@ -230,17 +224,12 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                         </span>
                       )}
                     </td>
-                    <td className="px-4 lg:px-6 py-4">
-                      <div className="text-[15px] text-black whitespace-nowrap">
-                        {new Date(item.createdAt).toLocaleDateString("ka-GE")}
-                      </div>
-                    </td>
                     <td className="px-4 lg:px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 flex-wrap">
+                      <div className="flex items-center justify-end gap-2 ">
                         {onEdit && (
                           <button
                             onClick={() => onEdit(item.id)}
-                            className="text-black hover:text-gray-800 transition-colors text-[15px] whitespace-nowrap"
+                            className="bg-green-600 cursor-pointer font-bold text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[15px] whitespace-nowrap"
                           >
                             რედაქტირება
                           </button>
@@ -248,9 +237,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                         {onDelete && (
                           <button
                             onClick={() => onDelete(item.id)}
-                            className="text-black hover:text-gray-800 transition-colors text-[15px] whitespace-nowrap"
+                            className="bg-red-600 cursor-pointer  font-bold text-white px-3 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-[20px] w-10 h-10 flex items-center justify-center"
+                            title="წაშლა"
                           >
-                            წაშლა
+                            ×
                           </button>
                         )}
                       </div>

@@ -66,7 +66,7 @@ export default function InventoryItem({
           {onEdit && (
             <button
               onClick={() => onEdit(id)}
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-[16px]"
+              className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-[16px] font-medium"
             >
               რედაქტირება
             </button>
@@ -74,9 +74,10 @@ export default function InventoryItem({
           {onDelete && (
             <button
               onClick={() => onDelete(id)}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-[16px]"
+              className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[20px] font-medium w-10 h-10 flex items-center justify-center"
+              title="წაშლა"
             >
-              წაშლა
+              ×
             </button>
           )}
         </div>

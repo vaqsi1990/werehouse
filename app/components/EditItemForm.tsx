@@ -90,10 +90,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.productNumber}
           onChange={(e) => handleChange("productNumber", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.productNumber ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: PRD-001"
+      
         />
         {errors.productNumber && (
           <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
@@ -108,10 +108,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.Name}
           onChange={(e) => handleChange("Name", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.Name ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: გიორგი"
+ 
         />
         {errors.Name && (
           <p className="mt-1 text-[16px] text-red-500">{errors.Name}</p>
@@ -126,10 +126,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.fullName}
           onChange={(e) => handleChange("fullName", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.fullName ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: გიორგი ბერიძე"
+
         />
         {errors.fullName && (
           <p className="mt-1 text-[16px] text-red-500">{errors.fullName}</p>
@@ -144,10 +144,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.phone}
           onChange={(e) => handleChange("phone", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.phone ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="ტელეფონის ნომერი"
+    
         />
         {errors.phone && (
           <p className="mt-1 text-[16px] text-red-500">{errors.phone}</p>
@@ -162,10 +162,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.city}
           onChange={(e) => handleChange("city", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.city ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: თბილისი"
+      
         />
         {errors.city && (
           <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
@@ -180,10 +180,10 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           type="text"
           value={formData.address}
           onChange={(e) => handleChange("address", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.address ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: რუსთაველის გამზირი 1"
+    
         />
         {errors.address && (
           <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
@@ -197,7 +197,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
         <select
           value={formData.status}
           onChange={(e) => handleChange("status", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full px-4 py-2 border rounded-lg text-black ${
             errors.status ? "border-red-500" : "border-gray-300"
           }`}
         >
