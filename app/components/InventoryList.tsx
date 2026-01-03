@@ -1,3 +1,7 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
 interface Item {
   id: string;
   productNumber: string;
@@ -16,9 +20,37 @@ interface InventoryListProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => void;
+  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => void;
 }
 
-export default function InventoryList({ items, onEdit, onDelete, onStatusChange }: InventoryListProps) {
+export default function InventoryList({ items, onEdit, onDelete, onStatusChange, onBulkStatusChange }: InventoryListProps) {
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  
+  // Reset selection when items change (e.g., after status update)
+  useEffect(() => {
+    setSelectedItems(new Set());
+  }, [items]);
+
+  // Format date in Georgian
+  const formatDateGeorgian = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = [
+      "იანვარი", "თებერვალი", "მარტი", "აპრილი", "მაისი", "ივნისი",
+      "ივლისი", "აგვისტო", "სექტემბერი", "ოქტომბერი", "ნოემბერი", "დეკემბერი"
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  const formatTimeGeorgian = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
   const statusLabels: Record<string, string> = {
     STOPPED: "გაჩერებული",
     IN_WAREHOUSE: "საწყობშია",
@@ -29,6 +61,33 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
     STOPPED: "bg-white text-black border-1 border-black",
     IN_WAREHOUSE: "bg-white text-black border-1 border-black",
     RELEASED: "bg-white text-black border-1 border-black",
+  };
+
+  const toggleItemSelection = (id: string) => {
+    setSelectedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === items.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(items.map((item) => item.id)));
+    }
+  };
+
+  const handleBulkStatusChange = (newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
+    if (onBulkStatusChange && selectedItems.size > 0) {
+      onBulkStatusChange(Array.from(selectedItems), newStatus);
+      setSelectedItems(new Set());
+    }
   };
 
   if (items.length === 0) {
@@ -125,6 +184,33 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden w-full max-w-full">
+      {/* Bulk Actions */}
+      {selectedItems.size > 0 && onBulkStatusChange && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between">
+          <div className="text-[15px] font-medium text-gray-700">
+            {selectedItems.size} ამანათი მონიშნულია
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED")}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              defaultValue=""
+            >
+              <option value="" disabled>სტატუსის შეცვლა</option>
+              <option value="STOPPED">გაჩერებული</option>
+              <option value="IN_WAREHOUSE">საწყობშია</option>
+              <option value="RELEASED">გაცემულია</option>
+            </select>
+            <button
+              onClick={() => setSelectedItems(new Set())}
+              className="px-3 py-2 text-gray-600 hover:text-gray-800 text-[15px]"
+            >
+              გაუქმება
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Card View */}
       <div className="lg:hidden p-4">
         {items.map((item) => (
@@ -137,6 +223,14 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
         <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.size === items.length && items.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
                     ამანათის ნომერი
                   </th>
@@ -165,7 +259,15 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={item.id} className={`hover:bg-gray-50 transition-colors ${selectedItems.has(item.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-4 lg:px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.has(item.id)}
+                        onChange={() => toggleItemSelection(item.id)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  font-medium text-black  ">
                         {item.productNumber}
@@ -193,17 +295,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black">
-                        {new Date(item.createdAt).toLocaleDateString("ka-GE", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {formatDateGeorgian(item.createdAt)}
                       </div>
                       <div className="text-[13px] text-gray-500 mt-1">
-                        {new Date(item.createdAt).toLocaleTimeString("ka-GE", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatTimeGeorgian(item.createdAt)}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">

@@ -274,6 +274,54 @@ export default function Home() {
     }
   };
 
+  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
+    try {
+      const statusLabels: Record<string, string> = {
+        STOPPED: "გაჩერებული",
+        IN_WAREHOUSE: "საწყობშია",
+        RELEASED: "გაცემულია",
+      };
+
+      // Update all items in parallel
+      const updatePromises = ids.map((id) =>
+        fetch(`/api/items/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        })
+      );
+
+      const responses = await Promise.all(updatePromises);
+      const results = await Promise.all(responses.map((r) => r.json()));
+
+      // Check if all updates were successful
+      const allSuccessful = responses.every((r) => r.ok);
+
+      if (allSuccessful) {
+        // Update items in state
+        setItems((prev) =>
+          prev.map((item) => {
+            if (ids.includes(item.id)) {
+              const updated = results.find((r) => r.id === item.id);
+              return updated || item;
+            }
+            return item;
+          })
+        );
+        toast.success(`${ids.length} ამანათის სტატუსი შეიცვალა: ${statusLabels[newStatus]}`);
+      } else {
+        toast.error("ზოგიერთი ამანათის სტატუსის განახლება ვერ მოხერხდა");
+      }
+    } catch (error) {
+      console.error("Error updating bulk status:", error);
+      toast.error("შეცდომა სტატუსების განახლებისას");
+    }
+  };
+
   const statusForSection = getStatusForSection(activeSection);
   
   // Filter items by status and search query
@@ -534,6 +582,7 @@ export default function Home() {
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
               onStatusChange={handleStatusChange}
+              onBulkStatusChange={handleBulkStatusChange}
             />
             
             {/* Pagination Controls */}

@@ -31,6 +31,19 @@ export default function InventoryItem({
     RELEASED: "გაცემულია",
   };
 
+  // Format date in Georgian
+  const formatDateGeorgian = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = [
+      "იანვარი", "თებერვალი", "მარტი", "აპრილი", "მაისი", "ივნისი",
+      "ივლისი", "აგვისტო", "სექტემბერი", "ოქტომბერი", "ნოემბერი", "დეკემბერი"
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between">
@@ -58,7 +71,7 @@ export default function InventoryItem({
               <span className="font-medium">მისამართი:</span> {address}
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              შექმნილია: {new Date(createdAt).toLocaleDateString("ka-GE")}
+              შექმნილია: {formatDateGeorgian(createdAt)}
             </p>
           </div>
         </div>
