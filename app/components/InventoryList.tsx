@@ -10,6 +10,7 @@ interface Item {
   phone: string;
   city: string;
   address: string;
+  weight: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
   createdAt: string;
   updatedAt: string;
@@ -235,10 +236,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     ამანათის ნომერი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    კლიენტის სახელი
+                    სახელი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    კლიენტის გვარი
+                    გვარი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     ტელეფონი
@@ -248,6 +249,9 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
                     თარიღი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
+                    წონა (kg)
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     სტატუსი
@@ -299,6 +303,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                       </div>
                       <div className="text-[13px] text-gray-500 mt-1">
                         {formatTimeGeorgian(item.createdAt)}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black">
+                        {item.weight} kg
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">

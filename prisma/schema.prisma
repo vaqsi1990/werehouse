@@ -16,11 +16,12 @@ datasource db {
 model Item {
   id            String     @id @default(uuid())
   productNumber String     @default("") // ამანათის ნომერი
-  Name          String // კლიენტის სახელი
+  Name          String // სახელი
   fullName      String
   phone         String // 9955XXXXXXXX
   city          String     @default("") // ქალაქი
   address       String     @default("") // მისამართი
+  weight        String     @default("") // წონა (kg)
   status        ItemStatus
   smsSent       Boolean    @default(false)
   createdAt     DateTime   @default(now())

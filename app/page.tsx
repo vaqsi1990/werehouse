@@ -19,6 +19,7 @@ interface Item {
   phone: string;
   city: string;
   address: string;
+  weight: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
   smsSent: boolean;
   createdAt: string;
@@ -338,7 +339,8 @@ export default function Home() {
       item.fullName.toLowerCase().includes(query) ||
       item.phone.toLowerCase().includes(query) ||
       item.city.toLowerCase().includes(query) ||
-      item.address.toLowerCase().includes(query)
+      item.address.toLowerCase().includes(query) ||
+      item.weight.toLowerCase().includes(query)
     );
   });
 
@@ -487,7 +489,7 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი..."
+                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"

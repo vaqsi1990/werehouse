@@ -24,6 +24,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
     phone: "",
     city: "",
     address: "",
+    weight: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fileError, setFileError] = useState<string>("");
@@ -63,6 +64,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         phone: "",
         city: "",
         address: "",
+        weight: "",
       });
       setErrors({});
       
@@ -121,13 +123,14 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               };
 
               const productNumber = getValue(["ამანათის ნომერი", "productNumber", "Product Number", "A", "A1"]);
-              const name = getValue(["კლიენტის სახელი", "Name", "First Name", "B", "B1"]);
-              const fullName = getValue(["კლიენტის გვარი", "fullName", "Last Name", "C", "C1"]);
+              const name = getValue(["სახელი", "კლიენტის სახელი", "Name", "First Name", "B", "B1"]);
+              const fullName = getValue(["გვარი", "კლიენტის გვარი", "fullName", "Last Name", "C", "C1"]);
               const phone = getValue(["ტელეფონი", "phone", "Phone", "D", "D1"]);
               const city = getValue(["ქალაქი", "city", "City", "E", "E1"]);
               const address = getValue(["მისამართი", "address", "Address", "F", "F1"]);
+              const weight = getValue(["წონა", "weight", "Weight", "G", "G1"]);
 
-              if (productNumber && name && fullName && phone && city && address) {
+              if (productNumber && name && fullName && phone && city && address && weight) {
                 const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   productNumber,
@@ -136,6 +139,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                   phone,
                   city,
                   address,
+                  weight,
                   status: defaultStatus,
                 });
                 items.push(item);
@@ -170,7 +174,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
           // Parse text - expect format like:
           // ამანათის ნომერი: XXX
-          // კლიენტის სახელი: XXX
+          // სახელი: XXX
           // etc.
           const items: ItemFormData[] = [];
           const blocks = text.split(/\n\s*\n/); // Split by double newlines
@@ -183,9 +187,9 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               lines.forEach(line => {
                 if (line.includes("ამანათის ნომერი") || line.includes("Product Number")) {
                   data.productNumber = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("კლიენტის სახელი") || line.includes("Name") || line.includes("First Name")) {
+                } else if (line.includes("სახელი") || line.includes("კლიენტის სახელი") || line.includes("Name") || line.includes("First Name")) {
                   data.Name = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("კლიენტის გვარი") || line.includes("fullName") || line.includes("Last Name")) {
+                } else if (line.includes("გვარი") || line.includes("კლიენტის გვარი") || line.includes("fullName") || line.includes("Last Name")) {
                   data.fullName = line.split(/[:：]/)[1]?.trim() || "";
                 } else if (line.includes("ტელეფონი") || line.includes("phone") || line.includes("Phone")) {
                   data.phone = line.split(/[:：]/)[1]?.trim() || "";
@@ -193,10 +197,12 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                   data.city = line.split(/[:：]/)[1]?.trim() || "";
                 } else if (line.includes("მისამართი") || line.includes("address") || line.includes("Address")) {
                   data.address = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("წონა") || line.includes("weight") || line.includes("Weight")) {
+                  data.weight = line.split(/[:：]/)[1]?.trim() || "";
                 }
               });
 
-              if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address) {
+              if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address && data.weight) {
                 const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
@@ -309,7 +315,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          კლიენტის სახელი <span className="text-red-500">*</span>
+          სახელი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -327,7 +333,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          კლიენტის გვარი <span className="text-red-500">*</span>
+          გვარი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -397,6 +403,24 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         )}
       </div>
 
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          წონა (kg) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.weight}
+          onChange={(e) => handleChange("weight", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.weight ? "border-red-500" : "border-gray-300"
+          }`}
+          placeholder="მაგ: 2.5"
+        />
+        {errors.weight && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.weight}</p>
+        )}
+      </div>
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -461,7 +485,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-700 font-medium mb-2">Excel ფაილის ფორმატი:</p>
               <p className="text-xs text-gray-600">
-                სვეტები: ამანათის ნომერი, კლიენტის სახელი, კლიენტის გვარი, ტელეფონი, ქალაქი, მისამართი
+                სვეტები: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა (kg)
               </p>
             </div>
           </div>

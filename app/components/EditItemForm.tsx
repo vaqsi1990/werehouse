@@ -12,6 +12,7 @@ interface Item {
   phone: string;
   city: string;
   address: string;
+  weight: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
 }
 
@@ -29,6 +30,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
     phone: item.phone,
     city: item.city,
     address: item.address,
+    weight: item.weight,
     status: item.status,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,6 +43,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
       phone: item.phone,
       city: item.city,
       address: item.address,
+      weight: item.weight,
       status: item.status,
     });
   }, [item]);
@@ -102,7 +105,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          კლიენტის სახელი <span className="text-red-500">*</span>
+          სახელი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -120,7 +123,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          კლიენტის გვარი <span className="text-red-500">*</span>
+          გვარი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -187,6 +190,24 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
         />
         {errors.address && (
           <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          წონა (kg) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.weight}
+          onChange={(e) => handleChange("weight", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.weight ? "border-red-500" : "border-gray-300"
+          }`}
+          placeholder="მაგ: 2.5"
+        />
+        {errors.weight && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.weight}</p>
         )}
       </div>
 

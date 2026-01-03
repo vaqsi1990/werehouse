@@ -56,7 +56,7 @@ export default function InventoryItem({
           </div>
           <div className="mt-2 space-y-1">
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">კლიენტი:</span> {Name}
+              <span className="font-medium">სახელი:</span> {Name}
             </p>
             <p className="text-[16px] text-gray-600">
               <span className="font-medium">სრული სახელი:</span> {fullName}
