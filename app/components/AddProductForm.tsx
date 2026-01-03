@@ -10,11 +10,12 @@ interface AddProductFormProps {
   onAdd: (product: ItemFormData) => void;
   onBulkAdd?: (products: ItemFormData[]) => void;
   onClose?: () => void;
+  activeSection?: string;
 }
 
 type FormMode = "manual" | "file";
 
-export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProductFormProps) {
+export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSection }: AddProductFormProps) {
   const [mode, setMode] = useState<FormMode>("manual");
   const [formData, setFormData] = useState({
     productNumber: "",
@@ -43,10 +44,13 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Determine status based on activeSection
+    const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
+    
     try {
       const validatedData = itemSchema.parse({
         ...formData,
-        status: "IN_WAREHOUSE", // default-ად IN_WAREHOUSE
+        status: defaultStatus,
       });
       
       onAdd(validatedData);
@@ -124,6 +128,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
               const address = getValue(["მისამართი", "address", "Address", "F", "F1"]);
 
               if (productNumber && name && fullName && phone && city && address) {
+                const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   productNumber,
                   Name: name,
@@ -131,7 +136,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
                   phone,
                   city,
                   address,
-                  status: "IN_WAREHOUSE",
+                  status: defaultStatus,
                 });
                 items.push(item);
               }
@@ -192,9 +197,10 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
               });
 
               if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address) {
+                const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
-                  status: "IN_WAREHOUSE",
+                  status: defaultStatus,
                 });
                 items.push(item);
               }

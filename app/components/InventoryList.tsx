@@ -104,7 +104,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
           {onEdit && (
             <button
               onClick={() => onEdit(item.id)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[16px]"
+              className="bg-green-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[16px]"
             >
               რედაქტირება
             </button>
@@ -152,8 +152,8 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
                     ქალაქი
                   </th>
-                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[180px]">
-                    მისამართი
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
+                    თარიღი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     სტატუსი
@@ -192,8 +192,18 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
-                      <div className="text-[15px]  text-black break-all" title={item.address}>
-                        {item.address}
+                      <div className="text-[15px]  text-black">
+                        {new Date(item.createdAt).toLocaleDateString("ka-GE", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </div>
+                      <div className="text-[13px] text-gray-500 mt-1">
+                        {new Date(item.createdAt).toLocaleTimeString("ka-GE", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
@@ -223,7 +233,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                         {onEdit && (
                           <button
                             onClick={() => onEdit(item.id)}
-                            className="bg-green-600 cursor-pointer font-bold text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[15px] whitespace-nowrap"
+                            className="bg-green-700 cursor-pointer font-bold text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[15px] whitespace-nowrap"
                           >
                             რედაქტირება
                           </button>

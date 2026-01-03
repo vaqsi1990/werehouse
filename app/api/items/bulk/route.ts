@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { itemSchema } from "../../../lib/validations";
+import { itemSchema, type ItemFormData } from "../../../lib/validations";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     // Validate all items
-    const validatedItems = [];
+    const validatedItems: ItemFormData[] = [];
     const errors: string[] = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -40,13 +40,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create items in bulk
+    // Create items in bulk with increased timeout for large files
     const createdItems = await prisma.$transaction(
-      validatedItems.map((item) =>
-        prisma.item.create({
-          data: item,
-        })
-      )
+      async (tx) => {
+        const results = [];
+        for (const item of validatedItems) {
+          const created = await tx.item.create({
+            data: item,
+          });
+          results.push(created);
+        }
+        return results;
+      },
+      {
+        maxWait: 20000, // Maximum time to wait for a transaction slot
+        timeout: 120000, // Maximum time the transaction can run (120 seconds / 2 minutes)
+      }
     );
 
     console.log(`Successfully created ${createdItems.length} items`);

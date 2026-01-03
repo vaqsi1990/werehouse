@@ -66,7 +66,7 @@ export default function InventoryItem({
           {onEdit && (
             <button
               onClick={() => onEdit(id)}
-              className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-[16px] font-medium"
+              className="px-3 py-1 bg-green-800 text-white rounded-lg hover:bg-green-700 transition-colors text-[16px] font-medium"
             >
               რედაქტირება
             </button>

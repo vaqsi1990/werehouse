@@ -33,6 +33,9 @@ export default function Home() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Map activeSection to Prisma status
   const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | null => {
@@ -272,9 +275,35 @@ export default function Home() {
   };
 
   const statusForSection = getStatusForSection(activeSection);
-  const filteredItems = statusForSection
+  
+  // Filter items by status and search query
+  const filteredItems = (statusForSection
     ? items.filter((item) => item.status === statusForSection)
-    : [];
+    : []
+  ).filter((item) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      item.productNumber.toLowerCase().includes(query) ||
+      item.Name.toLowerCase().includes(query) ||
+      item.fullName.toLowerCase().includes(query) ||
+      item.phone.toLowerCase().includes(query) ||
+      item.city.toLowerCase().includes(query) ||
+      item.address.toLowerCase().includes(query)
+    );
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+  // Reset to page 1 when search query or active section changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeSection]);
 
   // Debug logs
   console.log("Active section:", activeSection);
@@ -405,10 +434,57 @@ export default function Home() {
           </div>
 
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            {/* Search Input */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="გასუფთავება"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ნივთების სია</h2>
-              <div className="flex items-center gap-3">
-              {activeSection === "in-warehouse" && (
+              <div className="flex items-center gap-3 flex-wrap">
+              {(activeSection === "in-warehouse" || activeSection === "stopped") && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -454,14 +530,106 @@ export default function Home() {
               </div>
             </div>
             <InventoryList
-              items={filteredItems}
+              items={paginatedItems}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
               onStatusChange={handleStatusChange}
             />
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            currentPage === page
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2 text-gray-500">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {/* Pagination Info */}
+            {filteredItems.length > 0 && (
+              <div className="mt-4 text-center text-gray-600 text-sm">
+                ნაჩვენებია {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} {filteredItems.length}-დან
+              </div>
+            )}
           </div>
 
-          {activeSection === "in-warehouse" && (
+          {(activeSection === "in-warehouse" || activeSection === "stopped") && (
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
@@ -470,7 +638,8 @@ export default function Home() {
               <AddProductForm 
                 onAdd={handleAddProduct} 
                 onBulkAdd={handleBulkAddProducts}
-                onClose={() => setIsModalOpen(false)} 
+                onClose={() => setIsModalOpen(false)}
+                activeSection={activeSection}
               />
             </Modal>
           )}
