@@ -19,14 +19,14 @@ interface Item {
   phone: string;
   city: string;
   address: string;
-  status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
   smsSent: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState("received");
+  const [activeSection, setActiveSection] = useState("in-warehouse");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -35,10 +35,9 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Map activeSection to Prisma status
-  const getStatusForSection = (section: string): "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED" | null => {
-    const mapping: Record<string, "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED"> = {
-      received: "RECEIVED",
-      "in-transit": "IN_TRANSIT",
+  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | null => {
+    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED"> = {
+      stopped: "STOPPED",
       "in-warehouse": "IN_WAREHOUSE",
       shipped: "RELEASED",
     };
@@ -226,14 +225,13 @@ export default function Home() {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED") => {
+  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
     try {
       const item = items.find((i) => i.id === id);
       const itemProductNumber = item?.productNumber || "ნივთი";
       
       const statusLabels: Record<string, string> = {
-        RECEIVED: "შემოსული",
-        IN_TRANSIT: "გზაშია",
+        STOPPED: "გაჩერებული",
         IN_WAREHOUSE: "საწყობშია",
         RELEASED: "გაცემულია",
       };
@@ -285,15 +283,14 @@ export default function Home() {
   console.log("Filtered items:", filteredItems.length);
 
   const totalItems = items.length;
+  const itemsStopped = items.filter((i) => i.status === "STOPPED").length;
   const itemsInWarehouse = items.filter((i) => i.status === "IN_WAREHOUSE").length;
-  const itemsInTransit = items.filter((i) => i.status === "IN_TRANSIT").length;
   const itemsReleased = items.filter((i) => i.status === "RELEASED").length;
 
   const getSectionTitle = () => {
     const titles: Record<string, string> = {
-      received: "შემოსული ნივთები",
-      "in-transit": "გზაში მყოფი",
-      "in-warehouse": "საწყობში მყოფი",
+      "in-warehouse": "საწყობში",
+      stopped: "გაჩერებული",
       shipped: "გაცემული",
     };
     return titles[activeSection] || "ინვენტარი";
@@ -365,8 +362,8 @@ export default function Home() {
                 color="blue"
               />
               <StatsCard
-                title="გზაში"
-                value={itemsInTransit}
+                title="გაჩერებული"
+                value={itemsStopped}
                 icon={
                   <svg
                     className="w-6 h-6"
@@ -378,13 +375,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+                      d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
                 }
@@ -417,7 +408,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ნივთების სია</h2>
               <div className="flex items-center gap-3">
-              {activeSection === "received" && (
+              {activeSection === "in-warehouse" && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -470,7 +461,7 @@ export default function Home() {
             />
           </div>
 
-          {activeSection === "received" && (
+          {activeSection === "in-warehouse" && (
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}

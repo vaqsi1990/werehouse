@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       try {
         const validatedItem = itemSchema.parse({
           ...items[i],
-          status: items[i].status || "RECEIVED",
+          status: items[i].status || "IN_WAREHOUSE",
         });
         validatedItems.push(validatedItem);
       } catch (error: any) {

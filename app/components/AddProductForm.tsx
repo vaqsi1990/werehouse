@@ -46,7 +46,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
     try {
       const validatedData = itemSchema.parse({
         ...formData,
-        status: "RECEIVED", // შემოსული ნივთები default-ად RECEIVED
+        status: "IN_WAREHOUSE", // default-ად IN_WAREHOUSE
       });
       
       onAdd(validatedData);
@@ -116,7 +116,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
                 return "";
               };
 
-              const productNumber = getValue(["პროდუქტის ნომერი", "productNumber", "Product Number", "A", "A1"]);
+              const productNumber = getValue(["ამანათის ნომერი", "productNumber", "Product Number", "A", "A1"]);
               const name = getValue(["კლიენტის სახელი", "Name", "First Name", "B", "B1"]);
               const fullName = getValue(["კლიენტის გვარი", "fullName", "Last Name", "C", "C1"]);
               const phone = getValue(["ტელეფონი", "phone", "Phone", "D", "D1"]);
@@ -131,7 +131,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
                   phone,
                   city,
                   address,
-                  status: "RECEIVED",
+                  status: "IN_WAREHOUSE",
                 });
                 items.push(item);
               }
@@ -164,7 +164,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
           const text = result.value;
 
           // Parse text - expect format like:
-          // პროდუქტის ნომერი: XXX
+          // ამანათის ნომერი: XXX
           // კლიენტის სახელი: XXX
           // etc.
           const items: ItemFormData[] = [];
@@ -176,7 +176,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
               const data: any = {};
 
               lines.forEach(line => {
-                if (line.includes("პროდუქტის ნომერი") || line.includes("Product Number")) {
+                if (line.includes("ამანათის ნომერი") || line.includes("Product Number")) {
                   data.productNumber = line.split(/[:：]/)[1]?.trim() || "";
                 } else if (line.includes("კლიენტის სახელი") || line.includes("Name") || line.includes("First Name")) {
                   data.Name = line.split(/[:：]/)[1]?.trim() || "";
@@ -194,7 +194,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
               if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address) {
                 const item = itemSchema.parse({
                   ...data,
-                  status: "RECEIVED",
+                  status: "IN_WAREHOUSE",
                 });
                 items.push(item);
               }
@@ -285,7 +285,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          პროდუქტის ნომერი <span className="text-red-500">*</span>
+          ამანათის ნომერი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -455,7 +455,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose }: AddProduct
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-700 font-medium mb-2">Excel ფაილის ფორმატი:</p>
               <p className="text-xs text-gray-600">
-                სვეტები: პროდუქტის ნომერი, კლიენტის სახელი, კლიენტის გვარი, ტელეფონი, ქალაქი, მისამართი
+                სვეტები: ამანათის ნომერი, კლიენტის სახელი, კლიენტის გვარი, ტელეფონი, ქალაქი, მისამართი
               </p>
             </div>
           </div>

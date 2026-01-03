@@ -6,7 +6,7 @@ interface Item {
   phone: string;
   city: string;
   address: string;
-  status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
   createdAt: string;
   updatedAt: string;
 }
@@ -15,20 +15,18 @@ interface InventoryListProps {
   items: Item[];
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED") => void;
+  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => void;
 }
 
 export default function InventoryList({ items, onEdit, onDelete, onStatusChange }: InventoryListProps) {
   const statusLabels: Record<string, string> = {
-    RECEIVED: "შემოსული",
-    IN_TRANSIT: "გზაშია",
+    STOPPED: "გაჩერებული",
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
   };
 
   const statusColors: Record<string, string> = {
-    RECEIVED: "bg-white text-black border-1 border-black",
-    IN_TRANSIT: "bg-white text-black border-1 border-black",
+    STOPPED: "bg-white text-black border-1 border-black",
     IN_WAREHOUSE: "bg-white text-black border-1 border-black",
     RELEASED: "bg-white text-black border-1 border-black",
   };
@@ -90,13 +88,12 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
             <select
               value={item.status}
               onChange={(e) => {
-                const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+                const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
                 onStatusChange(item.id, newStatus);
               }}
               className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
             >
-              <option value="RECEIVED">შემოსული</option>
-              <option value="IN_TRANSIT">გზაშია</option>
+              <option value="STOPPED">გაჩერებული</option>
               <option value="IN_WAREHOUSE">საწყობშია</option>
               <option value="RELEASED">გაცემულია</option>
             </select>
@@ -141,7 +138,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    პროდუქტის ნომერი
+                    ამანათის ნომერი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     კლიენტის სახელი
@@ -204,13 +201,12 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange 
                         <select
                           value={item.status}
                           onChange={(e) => {
-                            const newStatus = e.target.value as "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+                            const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
                             onStatusChange(item.id, newStatus);
                           }}
                           className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusColors[item.status]} w-full max-w-[140px]`}
                         >
-                          <option value="RECEIVED">შემოსული</option>
-                          <option value="IN_TRANSIT">გზაშია</option>
+                          <option value="STOPPED">გაჩერებული</option>
                           <option value="IN_WAREHOUSE">საწყობშია</option>
                           <option value="RELEASED">გაცემულია</option>
                         </select>

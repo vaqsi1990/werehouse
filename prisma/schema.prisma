@@ -15,7 +15,7 @@ datasource db {
 
 model Item {
   id            String     @id @default(uuid())
-  productNumber String     @default("") // პროდუქტის ნომერი
+  productNumber String     @default("") // ამანათის ნომერი
   Name          String // კლიენტის სახელი
   fullName      String
   phone         String // 9955XXXXXXXX
@@ -28,8 +28,7 @@ model Item {
 }
 
 enum ItemStatus {
-  RECEIVED // შემოსული
-  IN_TRANSIT // გზაშია
+  STOPPED // გაჩერებული
   IN_WAREHOUSE // საწყობშია
   RELEASED // გაცემულია
 }

@@ -6,7 +6,7 @@ interface InventoryItemProps {
   phone: string;
   city: string;
   address: string;
-  status: "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
   createdAt: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -26,7 +26,7 @@ export default function InventoryItem({
   onDelete,
 }: InventoryItemProps) {
   const statusLabels: Record<string, string> = {
-    IN_TRANSIT: "გზაშია",
+    STOPPED: "გაჩერებული",
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
   };

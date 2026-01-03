@@ -12,7 +12,7 @@ interface Item {
   phone: string;
   city: string;
   address: string;
-  status: "RECEIVED" | "IN_TRANSIT" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
 }
 
 interface EditItemFormProps {
@@ -84,7 +84,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          პროდუქტის ნომერი <span className="text-red-500">*</span>
+          ამანათის ნომერი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -201,8 +201,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
             errors.status ? "border-red-500" : "border-gray-300"
           }`}
         >
-          <option value="RECEIVED">შემოსული</option>
-          <option value="IN_TRANSIT">გზაშია</option>
+          <option value="STOPPED">გაჩერებული</option>
           <option value="IN_WAREHOUSE">საწყობშია</option>
           <option value="RELEASED">გაცემულია</option>
         </select>
