@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface HeaderProps {
   onMenuClick: () => void;
 }
@@ -29,6 +31,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 />
               </svg>
             </button>
+            <Image src="/logo.jpg" alt="logo" className="w-10 h-10" width={100} height={100} />
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800">დეშბორდი</h2>
           </div>
           <div className="flex items-center gap-2 lg:gap-4">
