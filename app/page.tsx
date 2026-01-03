@@ -333,6 +333,9 @@ export default function Home() {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase().trim();
+    // Remove "kg" from query for weight search to work with or without it
+    const queryWithoutKg = query.replace(/\s*kg\s*/g, "").trim();
+    
     return (
       item.productNumber.toLowerCase().includes(query) ||
       item.Name.toLowerCase().includes(query) ||
@@ -340,7 +343,9 @@ export default function Home() {
       item.phone.toLowerCase().includes(query) ||
       item.city.toLowerCase().includes(query) ||
       item.address.toLowerCase().includes(query) ||
-      item.weight.toLowerCase().includes(query)
+      item.weight.toLowerCase().includes(query) ||
+      item.weight.toLowerCase().includes(queryWithoutKg) ||
+      (queryWithoutKg && item.weight.toLowerCase().replace(/\s*kg\s*/g, "").includes(queryWithoutKg))
     );
   });
 
@@ -489,7 +494,7 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა..."
+                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა (kg)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"

@@ -307,7 +307,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black">
-                        {item.weight} kg
+                        {item.weight}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
