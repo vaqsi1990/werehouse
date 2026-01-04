@@ -9,6 +9,7 @@ import InventoryList from "./components/InventoryList";
 import AddProductForm from "./components/AddProductForm";
 import EditItemForm from "./components/EditItemForm";
 import Modal from "./components/Modal";
+import LoginForm from "./components/LoginForm";
 import type { ItemFormData } from "./lib/validations";
 
 interface Item {
@@ -27,6 +28,8 @@ interface Item {
 }
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [activeSection, setActiveSection] = useState("in-warehouse");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -37,6 +40,19 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem("authenticated");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    }
+    setCheckingAuth(false);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
   // Map activeSection to Prisma status
   const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | null => {
@@ -379,6 +395,23 @@ export default function Home() {
     };
     return titles[activeSection] || "ინვენტარი";
   };
+
+  // Show loading while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">იტვირთება...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
 
   if (loading) {
     return (
