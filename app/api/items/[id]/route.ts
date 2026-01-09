@@ -32,7 +32,7 @@ export async function PUT(
     console.log("Updating item:", id, "with data:", body);
     
     // Validate status if provided
-    const validStatuses = ["STOPPED", "IN_WAREHOUSE", "RELEASED"];
+    const validStatuses = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"];
     if (body.status && !validStatuses.includes(body.status)) {
       return NextResponse.json(
         { 

@@ -46,7 +46,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
     e.preventDefault();
     
     // Determine status based on activeSection
-    const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
+    const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
     
     try {
       const validatedData = itemSchema.parse({
@@ -131,7 +131,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               const weight = getValue(["წონა", "weight", "Weight", "G", "G1"]);
 
               if (productNumber && name && fullName && phone && city && address && weight) {
-                const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
+                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   productNumber,
                   Name: name,
@@ -203,7 +203,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               });
 
               if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address && data.weight) {
-                const defaultStatus = activeSection === "stopped" ? "STOPPED" : "IN_WAREHOUSE";
+                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
                   status: defaultStatus,

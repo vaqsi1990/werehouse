@@ -32,4 +32,5 @@ enum ItemStatus {
   STOPPED // გაჩერებული
   IN_WAREHOUSE // საწყობშია
   RELEASED // გაცემულია
+  REGION // რეგიონი
 }

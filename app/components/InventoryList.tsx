@@ -11,7 +11,7 @@ interface Item {
   city: string;
   address: string;
   weight: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
   updatedAt: string;
 }
@@ -20,8 +20,8 @@ interface InventoryListProps {
   items: Item[];
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => void;
-  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => void;
+  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
+  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
 }
 
 export default function InventoryList({ items, onEdit, onDelete, onStatusChange, onBulkStatusChange }: InventoryListProps) {
@@ -56,12 +56,14 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
     STOPPED: "გაჩერებული",
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
+    REGION: "რეგიონი",
   };
 
   const statusColors: Record<string, string> = {
     STOPPED: "bg-white text-black border-1 border-black",
     IN_WAREHOUSE: "bg-white text-black border-1 border-black",
     RELEASED: "bg-white text-black border-1 border-black",
+    REGION: "bg-white text-black border-1 border-black",
   };
 
   const toggleItemSelection = (id: string) => {
@@ -84,7 +86,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
     }
   };
 
-  const handleBulkStatusChange = (newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
+  const handleBulkStatusChange = (newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
     if (onBulkStatusChange && selectedItems.size > 0) {
       onBulkStatusChange(Array.from(selectedItems), newStatus);
       setSelectedItems(new Set());
@@ -148,7 +150,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
             <select
               value={item.status}
               onChange={(e) => {
-                const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+                const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
                 onStatusChange(item.id, newStatus);
               }}
               className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
@@ -156,6 +158,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
               <option value="STOPPED">გაჩერებული</option>
               <option value="IN_WAREHOUSE">საწყობშია</option>
               <option value="RELEASED">გაცემულია</option>
+              <option value="REGION">რეგიონი</option>
             </select>
           </div>
         )}
@@ -193,7 +196,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
           </div>
           <div className="flex items-center gap-2">
             <select
-              onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED")}
+              onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION")}
               className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
               defaultValue=""
             >
@@ -201,6 +204,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
               <option value="STOPPED">გაჩერებული</option>
               <option value="IN_WAREHOUSE">საწყობშია</option>
               <option value="RELEASED">გაცემულია</option>
+              <option value="REGION">რეგიონი</option>
             </select>
             <button
               onClick={() => setSelectedItems(new Set())}
@@ -250,11 +254,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
                     თარიღი
                   </th>
-                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
-                    წონა (kg)
-                  </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     სტატუსი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
+                    წონა (kg)
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     მოქმედებები
@@ -306,16 +310,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
-                      <div className="text-[15px]  text-black">
-                        {item.weight}
-                      </div>
-                    </td>
-                    <td className="px-4 lg:px-6 py-4">
                       {onStatusChange ? (
                         <select
                           value={item.status}
                           onChange={(e) => {
-                            const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+                            const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
                             onStatusChange(item.id, newStatus);
                           }}
                           className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusColors[item.status]} w-full max-w-[140px]`}
@@ -323,6 +322,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                           <option value="STOPPED">გაჩერებული</option>
                           <option value="IN_WAREHOUSE">საწყობშია</option>
                           <option value="RELEASED">გაცემულია</option>
+                          <option value="REGION">რეგიონი</option>
                         </select>
                       ) : (
                         <span
@@ -331,6 +331,11 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                           {statusLabels[item.status]}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black">
+                        {item.weight}
+                      </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 ">

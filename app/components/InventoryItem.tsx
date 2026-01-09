@@ -6,7 +6,7 @@ interface InventoryItemProps {
   phone: string;
   city: string;
   address: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -29,6 +29,7 @@ export default function InventoryItem({
     STOPPED: "გაჩერებული",
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
+    REGION: "რეგიონი",
   };
 
   // Format date in Georgian

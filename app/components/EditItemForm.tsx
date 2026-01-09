@@ -13,7 +13,7 @@ interface Item {
   city: string;
   address: string;
   weight: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
 }
 
 interface EditItemFormProps {
@@ -225,6 +225,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           <option value="STOPPED">გაჩერებული</option>
           <option value="IN_WAREHOUSE">საწყობშია</option>
           <option value="RELEASED">გაცემულია</option>
+          <option value="REGION">რეგიონი</option>
         </select>
         {errors.status && (
           <p className="mt-1 text-[16px] text-red-500">{errors.status}</p>

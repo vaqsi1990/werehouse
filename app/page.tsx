@@ -21,7 +21,7 @@ interface Item {
   city: string;
   address: string;
   weight: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   smsSent: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,11 +55,12 @@ export default function Home() {
   };
 
   // Map activeSection to Prisma status
-  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | null => {
-    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED"> = {
+  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | null => {
+    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION"> = {
       stopped: "STOPPED",
       "in-warehouse": "IN_WAREHOUSE",
       shipped: "RELEASED",
+      region: "REGION",
     };
     return mapping[section] || null;
   };
@@ -182,7 +183,7 @@ export default function Home() {
     }
 
     const confirmed = window.confirm(
-      `დარწმუნებული ხართ რომ გსურთ წაშალოთ ყველა ${totalCount} ნივთი? ეს მოქმედება შეუქცევადია!`
+      `დარწმუნებული ხართ რომ გსურთ წაშალოთ ყველა ${totalCount} ნივთი ამ სექციიდან? ეს მოქმედება შეუქცევადია!`
     );
     
     if (!confirmed) {
@@ -190,18 +191,23 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch("/api/items/bulk", {
-        method: "DELETE",
-      });
+      // Delete only filtered items (current tab items)
+      const deletePromises = filteredItems.map((item) =>
+        fetch(`/api/items/${item.id}`, {
+          method: "DELETE",
+        })
+      );
 
-      if (response.ok) {
-        const result = await response.json();
-        setItems([]);
-        toast.success(`ყველა ${result.count} ნივთი წარმატებით წაიშალა`);
+      const responses = await Promise.all(deletePromises);
+      const allSuccessful = responses.every((r) => r.ok);
+
+      if (allSuccessful) {
+        // Remove deleted items from state
+        const deletedIds = filteredItems.map((item) => item.id);
+        setItems((prev) => prev.filter((item) => !deletedIds.includes(item.id)));
+        toast.success(`ყველა ${totalCount} ნივთი წარმატებით წაიშალა`);
       } else {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        console.error("Failed to delete all items:", errorData);
-        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთების წაშლა ვერ მოხერხდა"}`);
+        toast.error("ზოგიერთი ნივთის წაშლა ვერ მოხერხდა");
       }
     } catch (error) {
       console.error("Error deleting all items:", error);
@@ -245,7 +251,7 @@ export default function Home() {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
+  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
     try {
       const item = items.find((i) => i.id === id);
       const itemProductNumber = item?.productNumber || "ნივთი";
@@ -254,6 +260,7 @@ export default function Home() {
         STOPPED: "გაჩერებული",
         IN_WAREHOUSE: "საწყობშია",
         RELEASED: "გაცემულია",
+        REGION: "რეგიონი",
       };
 
       console.log("Updating status for item:", id, "to:", newStatus);
@@ -291,12 +298,13 @@ export default function Home() {
     }
   };
 
-  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED") => {
+  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
     try {
       const statusLabels: Record<string, string> = {
         STOPPED: "გაჩერებული",
         IN_WAREHOUSE: "საწყობშია",
         RELEASED: "გაცემულია",
+        REGION: "რეგიონი",
       };
 
       // Update all items in parallel
@@ -386,12 +394,14 @@ export default function Home() {
   const itemsStopped = items.filter((i) => i.status === "STOPPED").length;
   const itemsInWarehouse = items.filter((i) => i.status === "IN_WAREHOUSE").length;
   const itemsReleased = items.filter((i) => i.status === "RELEASED").length;
+  const itemsRegion = items.filter((i) => i.status === "REGION").length;
 
   const getSectionTitle = () => {
     const titles: Record<string, string> = {
       "in-warehouse": "საწყობში",
       stopped: "გაჩერებული",
       shipped: "გაცემული",
+      region: "რეგიონი",
     };
     return titles[activeSection] || "ინვენტარი";
   };
@@ -437,7 +447,7 @@ export default function Home() {
         <main className="p-4 overflow-x-hidden">
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
               <StatsCard
                 title="სულ ნივთები"
                 value={totalItems}
@@ -498,7 +508,28 @@ export default function Home() {
                 }
                 color="yellow"
               />
+           
               <StatsCard
+                title="რეგიონი"
+                value={itemsRegion}
+                icon={
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                }
+                color="purple"
+              />
+                 <StatsCard
                 title="გაცემული"
                 value={itemsReleased}
                 icon={
@@ -572,7 +603,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ნივთების სია</h2>
               <div className="flex items-center gap-3 flex-wrap">
-              {(activeSection === "in-warehouse" || activeSection === "stopped") && (
+              {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region") && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -718,7 +749,7 @@ export default function Home() {
             )}
           </div>
 
-          {(activeSection === "in-warehouse" || activeSection === "stopped") && (
+          {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region") && (
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
