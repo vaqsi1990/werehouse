@@ -22,7 +22,7 @@ model Item {
   tsona         String     @default("") // წონა (kg)
   kalaki        String     @default("") // ქალაქი
   sakGadakhda   String     @default("") // საქ.გადახდა
-  tarighi       DateTime?  // თარიღი
+  tarighi       String?    // თარიღი (DD/MM/YYYY)
   status        ItemStatus // საქ. გაცვლა
   smsSent       Boolean    @default(false)
   createdAt     DateTime   @default(now())

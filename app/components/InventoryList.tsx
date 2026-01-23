@@ -10,7 +10,7 @@ interface Item {
   telefoni: string;
   kalaki: string;
   sakGadakhda: string;
-  tarighi?: string | Date | null;
+  tarighi?: string | null;
   tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
@@ -132,7 +132,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
         
         <div className="grid grid-cols-1 gap-2 text-[16px]">
           <div className="flex items-center gap-2">
-            <span className="text-black">გამომცემელი:</span>
+            <span className="text-black">გამომგზავნი:</span>
             <span className="text-black">{item.gamomcemeli}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
           {item.tarighi && (
             <div className="flex items-center gap-2">
               <span className="text-black">თარიღი:</span>
-              <span className="text-black">{formatDateGeorgian(item.tarighi.toString())}</span>
+              <span className="text-black">{item.tarighi}</span>
             </div>
           )}
         </div>
@@ -200,7 +200,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
       </div>
     </div>
   );
-
+console.log("items", items[1]);
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden w-full max-w-full">
       {/* Bulk Actions */}
@@ -255,7 +255,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     შტრიხ კოდი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    გამომცემელი
+                    გამომგზავნი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     მიმღები
@@ -323,10 +323,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black">
-                        {formatDateGeorgian(item.createdAt)}
+                        {item.tarighi}
                       </div>
                       <div className="text-[13px] text-gray-500 mt-1">
-                        {formatTimeGeorgian(item.createdAt)}
+                        {item.tarighi}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">

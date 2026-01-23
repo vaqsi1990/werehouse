@@ -92,9 +92,13 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
+          const workbook = XLSX.read(data, { type: "array", cellDates: false, cellNF: false });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet) as any[];
+          // Convert to JSON with raw option to preserve date strings
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { 
+            raw: false, // Convert all values to strings to preserve date formats
+            defval: null // Use null for empty cells
+          }) as any[];
 
           const items: ItemFormData[] = [];
           
@@ -106,6 +110,12 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           // Expected columns: shtrikhkodi, gamomcemeli, mimgebi, telefoni, tsona, kalaki, sakGadakhda, tarighi
           // Try to auto-detect column mapping
           const headers = Object.keys(jsonData[0] || {});
+          
+          // Debug: Log headers and first row to see what Excel is returning
+          if (jsonData.length > 0) {
+            console.log("Excel headers:", headers);
+            console.log("First row sample:", JSON.stringify(jsonData[0], null, 2));
+          }
           
           // Create a case-insensitive lookup map with normalized keys
           const createLookupMap = (row: any) => {
@@ -137,37 +147,63 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               const rowMap = createLookupMap(row);
               
               // Try different possible column names (case-insensitive, with normalization)
-              const getValue = (keys: string[]) => {
+              // Returns string or number (for Excel serial dates)
+              const getValue = (keys: string[], returnNumber = false): string | number | undefined => {
                 for (const key of keys) {
                   // Try exact match first
                   if (rowMap[key] !== undefined) {
                     const value = rowMap[key];
-                    if (value !== null && value !== undefined && String(value).trim() !== "") {
-                      return String(value).trim();
+                    if (value !== null && value !== undefined) {
+                      // For dates, return number if it's a number (Excel serial date)
+                      if (returnNumber && typeof value === 'number') {
+                        return value;
+                      }
+                      const strValue = String(value).trim();
+                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
+                        return strValue;
+                      }
                     }
                   }
                   // Try case-insensitive match
                   const lowerKey = key.toLowerCase();
                   if (rowMap[lowerKey] !== undefined) {
                     const value = rowMap[lowerKey];
-                    if (value !== null && value !== undefined && String(value).trim() !== "") {
-                      return String(value).trim();
+                    if (value !== null && value !== undefined) {
+                      if (returnNumber && typeof value === 'number') {
+                        return value;
+                      }
+                      const strValue = String(value).trim();
+                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
+                        return strValue;
+                      }
                     }
                   }
                   // Try normalized match (remove spaces)
                   const normalizedKey = lowerKey.replace(/\s+/g, '');
                   if (rowMap[normalizedKey] !== undefined) {
                     const value = rowMap[normalizedKey];
-                    if (value !== null && value !== undefined && String(value).trim() !== "") {
-                      return String(value).trim();
+                    if (value !== null && value !== undefined) {
+                      if (returnNumber && typeof value === 'number') {
+                        return value;
+                      }
+                      const strValue = String(value).trim();
+                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
+                        return strValue;
+                      }
                     }
                   }
                   // Try without dots
                   const noDotsKey = lowerKey.replace(/\./g, '');
                   if (rowMap[noDotsKey] !== undefined) {
                     const value = rowMap[noDotsKey];
-                    if (value !== null && value !== undefined && String(value).trim() !== "") {
-                      return String(value).trim();
+                    if (value !== null && value !== undefined) {
+                      if (returnNumber && typeof value === 'number') {
+                        return value;
+                      }
+                      const strValue = String(value).trim();
+                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
+                        return strValue;
+                      }
                     }
                   }
                   // Try partial match - check if any header contains the key
@@ -177,43 +213,140 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                     const normalizedSearch = lowerKey.replace(/\s+/g, '').replace(/\./g, '');
                     if (normalizedHeader.includes(normalizedSearch) || normalizedSearch.includes(normalizedHeader)) {
                       const value = row[headerKey];
-                      if (value !== null && value !== undefined && String(value).trim() !== "") {
-                        return String(value).trim();
+                      if (value !== null && value !== undefined) {
+                        if (returnNumber && typeof value === 'number') {
+                          return value;
+                        }
+                        const strValue = String(value).trim();
+                        if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
+                          return strValue;
+                        }
                       }
                     }
                   }
                 }
-                return "";
+                return undefined;
               };
 
               const shtrikhkodi = getValue(["შტრიხ კოდი", "shtrikhkodi", "mtrikhkodi", "productNumber", "Product Code", "product code", "კოდი", "A", "A1"]);
-              const gamomcemeli = getValue(["გამომცემელი", "გამომგზავნი", "gamomcemeli", "Sender", "sender", "B", "B1"]);
+              const gamomcemeli = getValue(["გამომგზავნი", "გამომგზავნი", "gamomcemeli", "Sender", "sender", "B", "B1"]);
               const mimgebi = getValue(["მიმღები", "mimgebi", "Receiver", "receiver", "Name", "name", "სახელი", "C", "C1"]);
               const telefoni = getValue(["ტელეფონი", "telefoni", "phone", "Phone", "ტელ", "D", "D1"]);
               const tsona = getValue(["წონა", "tsona", "weight", "Weight", "წონა (kg)", "E", "E1"]);
               const kalaki = getValue(["ქალაქი", "kalaki", "city", "City", "F", "F1"]);
               const sakGadakhda = getValue(["საქ.გადახდა", "საქ გადახდა", "საქგადახდა", "sakGadakhda", "sak.gadakhda", "sak gadakhda", "sakgadakhda", "Payment", "payment", "გადახდა", "G", "G1"]);
-              const tarighiRaw = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"]);
+              
+              // Get tarighi from Excel - Excel might return dates as serial numbers, strings, or Date objects
+              // Try getValue with returnNumber=true to get Excel serial dates
+              let tarighiRaw = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"]);
+              let tarighiRawAsNumber = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"], true);
+              
+              // Also try to get directly from row in case getValue didn't find it
+              if (!tarighiRaw && !tarighiRawAsNumber) {
+                const headerKeys = Object.keys(row);
+                for (const key of headerKeys) {
+                  const lowerKey = key.toLowerCase().trim();
+                  if (lowerKey === "თარიღი" || lowerKey.includes("თარიღი") || lowerKey === "tarighi" || lowerKey === "date") {
+                    const value = row[key];
+                    if (value !== undefined && value !== null && value !== "") {
+                      // If it's a Date object, convert to string
+                      if (value instanceof Date) {
+                        const day = value.getDate();
+                        const month = value.getMonth() + 1;
+                        const year = value.getFullYear();
+                        tarighiRaw = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                      } else if (typeof value === 'number') {
+                        tarighiRawAsNumber = value;
+                      } else {
+                        tarighiRaw = String(value).trim();
+                      }
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              const tarighiValue = tarighiRaw || tarighiRawAsNumber;
+              
+              // Debug logging
+              if (index < 3) {
+                console.log(`Row ${index + 1} - tarighiRaw:`, tarighiRaw, "tarighiRawAsNumber:", tarighiRawAsNumber, "tarighiValue:", tarighiValue, "row keys:", Object.keys(row));
+              }
 
-              // Convert date from various formats to ISO-8601
-              const convertDate = (dateStr: string): string | undefined => {
-                if (!dateStr || dateStr.trim() === "") return undefined;
+              // Convert date from various formats to DD/MM/YYYY format
+              // Handles both string formats, Excel serial numbers, and Date objects
+              const convertDateToDDMMYYYY = (dateValue: string | number | Date | undefined): string | undefined => {
+                if (!dateValue && dateValue !== 0) return undefined;
                 
                 try {
+                  let day: number, month: number, year: number;
+                  
+                  // If it's already a Date object
+                  if (dateValue instanceof Date) {
+                    if (!isNaN(dateValue.getTime()) && dateValue.getFullYear() > 1900 && dateValue.getFullYear() < 2100) {
+                      day = dateValue.getDate();
+                      month = dateValue.getMonth() + 1;
+                      year = dateValue.getFullYear();
+                      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                    }
+                    return undefined;
+                  }
+                  
+                  // If it's a number, it might be Excel serial number
+                  if (typeof dateValue === 'number') {
+                    // Excel serial date: January 1, 1900 = 1
+                    // Excel epoch is December 30, 1899
+                    const excelEpoch = new Date(1899, 11, 30); // December 30, 1899
+                    const date = new Date(excelEpoch.getTime() + (dateValue - 1) * 24 * 60 * 60 * 1000);
+                    if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+                      day = date.getDate();
+                      month = date.getMonth() + 1; // Month is 1-indexed for display
+                      year = date.getFullYear();
+                      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                    }
+                    return undefined;
+                  }
+                  
+                  // If it's a string
+                  const dateStr = String(dateValue).trim();
+                  if (dateStr === "" || dateStr === "null" || dateStr === "undefined") return undefined;
+                  
+                  // If already in DD/MM/YYYY format, return as is (with validation)
+                  const ddmmYYYYPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+                  const match = dateStr.match(ddmmYYYYPattern);
+                  if (match) {
+                    const d = parseInt(match[1]);
+                    const m = parseInt(match[2]);
+                    const y = parseInt(match[3]);
+                    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y < 2100) {
+                      return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+                    }
+                  }
+                  
+                  // Try parsing as ISO format (YYYY-MM-DD or with time)
+                  if (dateStr.includes('T') || dateStr.includes('Z') || /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+                      day = date.getDate();
+                      month = date.getMonth() + 1;
+                      year = date.getFullYear();
+                      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                    }
+                    return undefined;
+                  }
+                  
                   // Try parsing as Excel date (MM/DD/YYYY or DD/MM/YYYY)
-                  const dateParts = dateStr.trim().split(/[\/\-\.]/);
+                  const dateParts = dateStr.split(/[\/\-\.]/);
                   if (dateParts.length === 3) {
-                    let day: number, month: number, year: number;
-                    
                     // Try MM/DD/YYYY format first (US format)
                     if (parseInt(dateParts[0]) > 12) {
                       // DD/MM/YYYY format (European format)
                       day = parseInt(dateParts[0]);
-                      month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+                      month = parseInt(dateParts[1]);
                       year = parseInt(dateParts[2]);
                     } else {
                       // MM/DD/YYYY format
-                      month = parseInt(dateParts[0]) - 1; // Month is 0-indexed
+                      month = parseInt(dateParts[0]);
                       day = parseInt(dateParts[1]);
                       year = parseInt(dateParts[2]);
                     }
@@ -223,26 +356,29 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                       year += 2000;
                     }
                     
-                    const date = new Date(year, month, day);
-                    if (!isNaN(date.getTime())) {
-                      return date.toISOString();
+                    // Validate
+                    if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year < 2100) {
+                      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
                     }
                   }
                   
-                  // Try parsing as ISO date string
-                  const isoDate = new Date(dateStr);
-                  if (!isNaN(isoDate.getTime())) {
-                    return isoDate.toISOString();
+                  // If we get here, try general Date parsing as last resort
+                  const generalDate = new Date(dateStr);
+                  if (!isNaN(generalDate.getTime()) && generalDate.getFullYear() > 1900 && generalDate.getFullYear() < 2100) {
+                    day = generalDate.getDate();
+                    month = generalDate.getMonth() + 1;
+                    year = generalDate.getFullYear();
+                    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
                   }
                 } catch (e) {
-                  console.warn("Date conversion failed:", dateStr, e);
+                  console.warn("Date conversion failed:", dateValue, e);
                 }
                 
                 return undefined;
               };
-
-              // Handle both string and number (Excel serial number) formats
-              const tarighi = convertDate(tarighiRaw || (rowMap["თარიღი"] !== undefined ? rowMap["თარიღი"] : undefined));
+              
+              // Convert to DD/MM/YYYY format
+              const tarighi = convertDateToDDMMYYYY(tarighiValue);
 
               // Allow empty sakGadakhda (use empty string as default)
               const sakGadakhdaValue = sakGadakhda || "";
@@ -291,7 +427,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
           if (items.length === 0) {
             const availableHeaders = headers.length > 0 ? headers.join(", ") : "სვეტები ვერ მოიძებნა";
-            reject(new Error(`ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ სვეტების სახელები.\n\nმოსალოდნელი სვეტები: შტრიხ კოდი, გამომცემელი (ან გამომგზავნი), მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი\n\nნაპოვნი სვეტები: ${availableHeaders}`));
+            reject(new Error(`ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ სვეტების სახელები.\n\nმოსალოდნელი სვეტები: შტრიხ კოდი, გამომგზავნი (ან გამომგზავნი), მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი\n\nნაპოვნი სვეტები: ${availableHeaders}`));
           } else {
             resolve(items);
           }
@@ -329,7 +465,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                 const lowerLine = line.toLowerCase();
                 if (line.includes("შტრიხ კოდი") || lowerLine.includes("product code") || lowerLine.includes("shtrikhkodi") || lowerLine.includes("mtrikhkodi") || lowerLine.includes("productnumber")) {
                   data.shtrikhkodi = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("გამომცემელი") || line.includes("გამომგზავნი") || lowerLine.includes("sender") || lowerLine.includes("gamomcemeli")) {
+                } else if (line.includes("გამომგზავნი") || line.includes("გამომგზავნი") || lowerLine.includes("sender") || lowerLine.includes("gamomcemeli")) {
                   data.gamomcemeli = line.split(/[:：]/)[1]?.trim() || "";
                 } else if (line.includes("მიმღები") || lowerLine.includes("receiver") || lowerLine.includes("mimgebi") || lowerLine.includes("name")) {
                   data.mimgebi = line.split(/[:：]/)[1]?.trim() || "";
@@ -346,47 +482,75 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                 }
               });
 
-              // Convert date from various formats to ISO-8601
-              const convertDate = (dateStr: string): string | undefined => {
-                if (!dateStr || dateStr.trim() === "") return undefined;
+              // Convert date from various formats to DD/MM/YYYY format
+              const convertDateToDDMMYYYY = (dateValue: string | number | undefined): string | undefined => {
+                if (!dateValue && dateValue !== 0) return undefined;
                 
                 try {
-                  // Try parsing as Excel date (MM/DD/YYYY or DD/MM/YYYY)
-                  const dateParts = dateStr.trim().split(/[\/\-\.]/);
-                  if (dateParts.length === 3) {
-                    let day: number, month: number, year: number;
-                    
-                    // Try MM/DD/YYYY format first (US format)
-                    if (parseInt(dateParts[0]) > 12) {
-                      // DD/MM/YYYY format (European format)
-                      day = parseInt(dateParts[0]);
-                      month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
-                      year = parseInt(dateParts[2]);
+                  let day: number, month: number, year: number;
+                  
+                  // If it's a number, it might be Excel serial number
+                  if (typeof dateValue === 'number') {
+                    const excelEpoch = new Date(1899, 11, 30);
+                    const date = new Date(excelEpoch.getTime() + (dateValue - 1) * 24 * 60 * 60 * 1000);
+                    if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+                      day = date.getDate();
+                      month = date.getMonth() + 1;
+                      year = date.getFullYear();
                     } else {
-                      // MM/DD/YYYY format
-                      month = parseInt(dateParts[0]) - 1; // Month is 0-indexed
-                      day = parseInt(dateParts[1]);
-                      year = parseInt(dateParts[2]);
+                      return undefined;
+                    }
+                  } else {
+                    const dateStr = String(dateValue).trim();
+                    if (dateStr === "" || dateStr === "null" || dateStr === "undefined") return undefined;
+                    
+                    // If already in DD/MM/YYYY format, return as is
+                    const ddmmYYYYPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+                    const match = dateStr.match(ddmmYYYYPattern);
+                    if (match) {
+                      const d = parseInt(match[1]);
+                      const m = parseInt(match[2]);
+                      const y = parseInt(match[3]);
+                      if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y < 2100) {
+                        return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+                      }
                     }
                     
-                    // Handle 2-digit years
-                    if (year < 100) {
-                      year += 2000;
-                    }
-                    
-                    const date = new Date(year, month, day);
-                    if (!isNaN(date.getTime())) {
-                      return date.toISOString();
+                    // Try parsing as ISO format or other formats
+                    if (dateStr.includes('T') || dateStr.includes('Z') || /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                      const date = new Date(dateStr);
+                      if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+                        day = date.getDate();
+                        month = date.getMonth() + 1;
+                        year = date.getFullYear();
+                      } else {
+                        return undefined;
+                      }
+                    } else {
+                      const dateParts = dateStr.split(/[\/\-\.]/);
+                      if (dateParts.length === 3) {
+                        if (parseInt(dateParts[0]) > 12) {
+                          day = parseInt(dateParts[0]);
+                          month = parseInt(dateParts[1]);
+                          year = parseInt(dateParts[2]);
+                        } else {
+                          month = parseInt(dateParts[0]);
+                          day = parseInt(dateParts[1]);
+                          year = parseInt(dateParts[2]);
+                        }
+                        if (year < 100) year += 2000;
+                        if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year >= 2100) {
+                          return undefined;
+                        }
+                      } else {
+                        return undefined;
+                      }
                     }
                   }
                   
-                  // Try parsing as ISO date string
-                  const isoDate = new Date(dateStr);
-                  if (!isNaN(isoDate.getTime())) {
-                    return isoDate.toISOString();
-                  }
+                  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
                 } catch (e) {
-                  console.warn("Date conversion failed:", dateStr, e);
+                  console.warn("Date conversion failed:", dateValue, e);
                 }
                 
                 return undefined;
@@ -396,7 +560,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                 const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
-                  tarighi: convertDate(data.tarighi),
+                  tarighi: convertDateToDDMMYYYY(data.tarighi),
                   status: defaultStatus,
                 });
                 items.push(item);
@@ -506,7 +670,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გამომცემელი <span className="text-red-500">*</span>
+          გამომგზავნი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -617,10 +781,11 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           თარიღი
         </label>
         <input
-          type="date"
+          type="text"
           value={formData.tarighi}
           onChange={(e) => handleChange("tarighi", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+          placeholder="DD/MM/YYYY"
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-gray-400 ${
             errors.tarighi ? "border-red-500" : "border-gray-300"
           }`}
      
@@ -694,7 +859,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-700 font-medium mb-2">Excel ფაილის ფორმატი:</p>
               <p className="text-xs text-gray-600">
-                სვეტები: შტრიხ კოდი, გამომცემელი, მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი
+                სვეტები: შტრიხ კოდი, გამომგზავნი, მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი
               </p>
             </div>
           </div>

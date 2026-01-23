@@ -12,7 +12,7 @@ interface Item {
   telefoni: string;
   kalaki: string;
   sakGadakhda: string;
-  tarighi?: string | Date | null;
+  tarighi?: string | null;
   tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
 }
@@ -31,7 +31,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
     telefoni: item.telefoni,
     kalaki: item.kalaki,
     sakGadakhda: item.sakGadakhda || "",
-    tarighi: item.tarighi ? (typeof item.tarighi === 'string' ? item.tarighi : new Date(item.tarighi).toISOString().split('T')[0]) : "",
+    tarighi: item.tarighi || "",
     tsona: item.tsona,
     status: item.status,
   });
@@ -45,7 +45,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
       telefoni: item.telefoni,
       kalaki: item.kalaki,
       sakGadakhda: item.sakGadakhda || "",
-      tarighi: item.tarighi ? (typeof item.tarighi === 'string' ? item.tarighi : new Date(item.tarighi).toISOString().split('T')[0]) : "",
+      tarighi: item.tarighi || "",
       tsona: item.tsona,
       status: item.status,
     });
@@ -108,7 +108,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გამომცემელი <span className="text-red-500">*</span>
+          გამომგზავნი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -219,10 +219,11 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           თარიღი
         </label>
         <input
-          type="date"
+          type="text"
           value={formData.tarighi}
           onChange={(e) => handleChange("tarighi", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+          placeholder="DD/MM/YYYY"
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-gray-400 ${
             errors.tarighi ? "border-red-500" : "border-gray-300"
           }`}
     

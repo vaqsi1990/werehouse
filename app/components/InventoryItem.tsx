@@ -6,7 +6,7 @@ interface InventoryItemProps {
   telefoni: string;
   kalaki: string;
   sakGadakhda: string;
-  tarighi?: string | Date | null;
+  tarighi?: string | null;
   tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
@@ -61,7 +61,7 @@ export default function InventoryItem({
           </div>
           <div className="mt-2 space-y-1">
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">გამომცემელი:</span> {gamomcemeli}
+              <span className="font-medium">გამომგზავნი:</span> {gamomcemeli}
             </p>
             <p className="text-[16px] text-gray-600">
               <span className="font-medium">მიმღები:</span> {mimgebi}
@@ -80,7 +80,7 @@ export default function InventoryItem({
             </p>
             {tarighi && (
               <p className="text-[16px] text-gray-600">
-                <span className="font-medium">თარიღი:</span> {formatDateGeorgian(tarighi.toString())}
+                <span className="font-medium">თარიღი:</span> {tarighi}
               </p>
             )}
             <p className="text-xs text-gray-400 mt-2">

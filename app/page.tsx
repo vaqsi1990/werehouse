@@ -20,7 +20,7 @@ interface Item {
   telefoni: string;
   kalaki: string;
   sakGadakhda: string;
-  tarighi?: string | Date | null;
+  tarighi?: string | null;
   tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   smsSent: boolean;
@@ -450,7 +450,7 @@ export default function Home() {
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
               <StatsCard
-                title="სულ ნივთები"
+                title="სულ ამანათები"
                 value={totalItems}
                 icon={
                   <svg
@@ -602,7 +602,7 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">ნივთების სია</h2>
+              <h2 className="text-2xl font-bold text-gray-800">ამანათების სია</h2>
               <div className="flex items-center gap-3 flex-wrap">
               {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region") && (
                   <button
