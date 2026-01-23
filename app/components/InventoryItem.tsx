@@ -1,11 +1,13 @@
 interface InventoryItemProps {
   id: string;
-  productNumber: string;
-  Name: string;
-  fullName: string;
-  phone: string;
-  city: string;
-  address: string;
+  shtrikhkodi: string;
+  gamomcemeli: string;
+  mimgebi: string;
+  telefoni: string;
+  kalaki: string;
+  sakGadakhda: string;
+  tarighi?: string | Date | null;
+  tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
   onEdit?: (id: string) => void;
@@ -14,12 +16,14 @@ interface InventoryItemProps {
 
 export default function InventoryItem({
   id,
-  productNumber,
-  Name,
-  fullName,
-  phone,
-  city,
-  address,
+  shtrikhkodi,
+  gamomcemeli,
+  mimgebi,
+  telefoni,
+  kalaki,
+  sakGadakhda,
+  tarighi,
+  tsona,
   status,
   createdAt,
   onEdit,
@@ -50,27 +54,35 @@ export default function InventoryItem({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-800">{productNumber}</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{shtrikhkodi}</h3>
             <span className="bg-blue-100 text-blue-600 text-xs font-medium px-2 py-1 rounded">
               {statusLabels[status]}
             </span>
           </div>
           <div className="mt-2 space-y-1">
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">სახელი:</span> {Name}
+              <span className="font-medium">გამომცემელი:</span> {gamomcemeli}
             </p>
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">სრული სახელი:</span> {fullName}
+              <span className="font-medium">მიმღები:</span> {mimgebi}
             </p>
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">ტელეფონი:</span> {phone}
+              <span className="font-medium">ტელეფონი:</span> {telefoni}
             </p>
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">ქალაქი:</span> {city}
+              <span className="font-medium">წონა:</span> {tsona} kg
             </p>
             <p className="text-[16px] text-gray-600">
-              <span className="font-medium">მისამართი:</span> {address}
+              <span className="font-medium">ქალაქი:</span> {kalaki}
             </p>
+            <p className="text-[16px] text-gray-600">
+              <span className="font-medium">საქ.გადახდა:</span> {sakGadakhda}
+            </p>
+            {tarighi && (
+              <p className="text-[16px] text-gray-600">
+                <span className="font-medium">თარიღი:</span> {formatDateGeorgian(tarighi.toString())}
+              </p>
+            )}
             <p className="text-xs text-gray-400 mt-2">
               შექმნილია: {formatDateGeorgian(createdAt)}
             </p>

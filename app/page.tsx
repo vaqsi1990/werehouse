@@ -14,13 +14,14 @@ import type { ItemFormData } from "./lib/validations";
 
 interface Item {
   id: string;
-  productNumber: string;
-  Name: string;
-  fullName: string;
-  phone: string;
-  city: string;
-  address: string;
-  weight: string;
+  shtrikhkodi: string;
+  gamomcemeli: string;
+  mimgebi: string;
+  telefoni: string;
+  kalaki: string;
+  sakGadakhda: string;
+  tarighi?: string | Date | null;
+  tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   smsSent: boolean;
   createdAt: string;
@@ -146,7 +147,7 @@ export default function Home() {
 
   const handleDeleteProduct = async (id: string) => {
     const item = items.find((i) => i.id === id);
-    const itemProductNumber = item?.productNumber || "ნივთი";
+    const itemProductNumber = item?.shtrikhkodi || "ნივთი";
     
     const confirmed = window.confirm(
       `დარწმუნებული ხართ რომ გსურთ წაშალოთ "${itemProductNumber}"?`
@@ -254,7 +255,7 @@ export default function Home() {
   const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
     try {
       const item = items.find((i) => i.id === id);
-      const itemProductNumber = item?.productNumber || "ნივთი";
+      const itemProductNumber = item?.shtrikhkodi || "ნივთი";
       
       const statusLabels: Record<string, string> = {
         STOPPED: "გაჩერებული",
@@ -361,15 +362,15 @@ export default function Home() {
     const queryWithoutKg = query.replace(/\s*kg\s*/g, "").trim();
     
     return (
-      item.productNumber.toLowerCase().includes(query) ||
-      item.Name.toLowerCase().includes(query) ||
-      item.fullName.toLowerCase().includes(query) ||
-      item.phone.toLowerCase().includes(query) ||
-      item.city.toLowerCase().includes(query) ||
-      item.address.toLowerCase().includes(query) ||
-      item.weight.toLowerCase().includes(query) ||
-      item.weight.toLowerCase().includes(queryWithoutKg) ||
-      (queryWithoutKg && item.weight.toLowerCase().replace(/\s*kg\s*/g, "").includes(queryWithoutKg))
+      item.shtrikhkodi.toLowerCase().includes(query) ||
+      item.gamomcemeli.toLowerCase().includes(query) ||
+      item.mimgebi.toLowerCase().includes(query) ||
+      item.telefoni.toLowerCase().includes(query) ||
+      item.kalaki.toLowerCase().includes(query) ||
+      item.sakGadakhda.toLowerCase().includes(query) ||
+      item.tsona.toLowerCase().includes(query) ||
+      item.tsona.toLowerCase().includes(queryWithoutKg) ||
+      (queryWithoutKg && item.tsona.toLowerCase().replace(/\s*kg\s*/g, "").includes(queryWithoutKg))
     );
   });
 
@@ -621,7 +622,7 @@ export default function Home() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    ახალი ნივთის დამატება
+                    ახალი ამანათის დამატება
                   </button>
                 )}
                 {filteredItems.length > 0 && (
@@ -753,7 +754,7 @@ export default function Home() {
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              title="ახალი ნივთის დამატება"
+              title="ახალი ამანათის დამატება"
             >
               <AddProductForm 
                 onAdd={handleAddProduct} 
@@ -771,7 +772,7 @@ export default function Home() {
                 setIsEditModalOpen(false);
                 setEditingItem(null);
               }}
-              title="ნივთის რედაქტირება"
+              title="ამანათის რედაქტირება"
             >
               <EditItemForm
                 item={editingItem}

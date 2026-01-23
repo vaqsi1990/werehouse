@@ -3,13 +3,14 @@ import { z } from "zod";
 export const ItemStatusEnum = z.enum(["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"]);
 
 export const itemSchema = z.object({
-  productNumber: z.string().min(1, "ამანათის ნომერი სავალდებულოა"),
-  Name: z.string().min(1, "სახელი სავალდებულოა"),
-  fullName: z.string().min(1, "გვარი სავალდებულოა"),
-  phone: z.string().min(1, "ტელეფონი სავალდებულოა"),
-  city: z.string().min(1, "ქალაქი სავალდებულოა"),
-  address: z.string().min(1, "მისამართი სავალდებულოა"),
-  weight: z.string().min(1, "წონა (kg) სავალდებულოა"),
+  shtrikhkodi: z.string().min(1, "შტრიხ კოდი სავალდებულოა"),
+  gamomcemeli: z.string().min(1, "გამომცემელი სავალდებულოა"),
+  mimgebi: z.string().min(1, "მიმღები სავალდებულოა"),
+  telefoni: z.string().min(1, "ტელეფონი სავალდებულოა"),
+  tsona: z.string().min(1, "წონა (kg) სავალდებულოა"),
+  kalaki: z.string().min(1, "ქალაქი სავალდებულოა"),
+  sakGadakhda: z.string().default(""),
+  tarighi: z.string().optional().or(z.date().optional()),
   status: ItemStatusEnum.default("IN_WAREHOUSE"),
 });
 

@@ -6,13 +6,14 @@ import { z } from "zod";
 
 interface Item {
   id: string;
-  productNumber: string;
-  Name: string;
-  fullName: string;
-  phone: string;
-  city: string;
-  address: string;
-  weight: string;
+  shtrikhkodi: string;
+  gamomcemeli: string;
+  mimgebi: string;
+  telefoni: string;
+  kalaki: string;
+  sakGadakhda: string;
+  tarighi?: string | Date | null;
+  tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
 }
 
@@ -24,26 +25,28 @@ interface EditItemFormProps {
 
 export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormProps) {
   const [formData, setFormData] = useState({
-    productNumber: item.productNumber,
-    Name: item.Name,
-    fullName: item.fullName,
-    phone: item.phone,
-    city: item.city,
-    address: item.address,
-    weight: item.weight,
+    shtrikhkodi: item.shtrikhkodi,
+    gamomcemeli: item.gamomcemeli,
+    mimgebi: item.mimgebi,
+    telefoni: item.telefoni,
+    kalaki: item.kalaki,
+    sakGadakhda: item.sakGadakhda || "",
+    tarighi: item.tarighi ? (typeof item.tarighi === 'string' ? item.tarighi : new Date(item.tarighi).toISOString().split('T')[0]) : "",
+    tsona: item.tsona,
     status: item.status,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData({
-      productNumber: item.productNumber,
-      Name: item.Name,
-      fullName: item.fullName,
-      phone: item.phone,
-      city: item.city,
-      address: item.address,
-      weight: item.weight,
+      shtrikhkodi: item.shtrikhkodi,
+      gamomcemeli: item.gamomcemeli,
+      mimgebi: item.mimgebi,
+      telefoni: item.telefoni,
+      kalaki: item.kalaki,
+      sakGadakhda: item.sakGadakhda || "",
+      tarighi: item.tarighi ? (typeof item.tarighi === 'string' ? item.tarighi : new Date(item.tarighi).toISOString().split('T')[0]) : "",
+      tsona: item.tsona,
       status: item.status,
     });
   }, [item]);
@@ -87,55 +90,55 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ამანათის ნომერი <span className="text-red-500">*</span>
+          შტრიხ კოდი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.productNumber}
-          onChange={(e) => handleChange("productNumber", e.target.value)}
+          value={formData.shtrikhkodi}
+          onChange={(e) => handleChange("shtrikhkodi", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.productNumber ? "border-red-500" : "border-gray-300"
+            errors.shtrikhkodi ? "border-red-500" : "border-gray-300"
           }`}
       
         />
-        {errors.productNumber && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
+        {errors.shtrikhkodi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.shtrikhkodi}</p>
         )}
       </div>
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          სახელი <span className="text-red-500">*</span>
+          გამომცემელი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.Name}
-          onChange={(e) => handleChange("Name", e.target.value)}
+          value={formData.gamomcemeli}
+          onChange={(e) => handleChange("gamomcemeli", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.Name ? "border-red-500" : "border-gray-300"
+            errors.gamomcemeli ? "border-red-500" : "border-gray-300"
           }`}
  
         />
-        {errors.Name && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.Name}</p>
+        {errors.gamomcemeli && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.gamomcemeli}</p>
         )}
       </div>
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გვარი <span className="text-red-500">*</span>
+          მიმღები <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.fullName}
-          onChange={(e) => handleChange("fullName", e.target.value)}
+          value={formData.mimgebi}
+          onChange={(e) => handleChange("mimgebi", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.fullName ? "border-red-500" : "border-gray-300"
+            errors.mimgebi ? "border-red-500" : "border-gray-300"
           }`}
 
         />
-        {errors.fullName && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.fullName}</p>
+        {errors.mimgebi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.mimgebi}</p>
         )}
       </div>
 
@@ -145,51 +148,15 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
         </label>
         <input
           type="text"
-          value={formData.phone}
-          onChange={(e) => handleChange("phone", e.target.value)}
+          value={formData.telefoni}
+          onChange={(e) => handleChange("telefoni", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.phone ? "border-red-500" : "border-gray-300"
+            errors.telefoni ? "border-red-500" : "border-gray-300"
           }`}
     
         />
-        {errors.phone && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.phone}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ქალაქი <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.city}
-          onChange={(e) => handleChange("city", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.city ? "border-red-500" : "border-gray-300"
-          }`}
-      
-        />
-        {errors.city && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          მისამართი <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.address}
-          onChange={(e) => handleChange("address", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.address ? "border-red-500" : "border-gray-300"
-          }`}
-    
-        />
-        {errors.address && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
+        {errors.telefoni && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.telefoni}</p>
         )}
       </div>
 
@@ -199,15 +166,69 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
         </label>
         <input
           type="text"
-          value={formData.weight}
-          onChange={(e) => handleChange("weight", e.target.value)}
+          value={formData.tsona}
+          onChange={(e) => handleChange("tsona", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.weight ? "border-red-500" : "border-gray-300"
+            errors.tsona ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: 2.5"
         />
-        {errors.weight && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.weight}</p>
+        {errors.tsona && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.tsona}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          ქალაქი <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.kalaki}
+          onChange={(e) => handleChange("kalaki", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.kalaki ? "border-red-500" : "border-gray-300"
+          }`}
+      
+        />
+        {errors.kalaki && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.kalaki}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          საქ.გადახდა <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.sakGadakhda}
+          onChange={(e) => handleChange("sakGadakhda", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.sakGadakhda ? "border-red-500" : "border-gray-300"
+          }`}
+    
+        />
+        {errors.sakGadakhda && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.sakGadakhda}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          თარიღი
+        </label>
+        <input
+          type="date"
+          value={formData.tarighi}
+          onChange={(e) => handleChange("tarighi", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.tarighi ? "border-red-500" : "border-gray-300"
+          }`}
+    
+        />
+        {errors.tarighi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
         )}
       </div>
 

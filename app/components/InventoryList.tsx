@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 
 interface Item {
   id: string;
-  productNumber: string;
-  Name: string;
-  fullName: string;
-  phone: string;
-  city: string;
-  address: string;
-  weight: string;
+  shtrikhkodi: string;
+  gamomcemeli: string;
+  mimgebi: string;
+  telefoni: string;
+  kalaki: string;
+  sakGadakhda: string;
+  tarighi?: string | Date | null;
+  tsona: string;
   status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
   createdAt: string;
   updatedAt: string;
@@ -121,8 +122,8 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
       <div className="space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-semibold text-black text-[16px] mb-1">{item.productNumber}</h3>
-            <p className="text-black text-[16px]">{item.Name} {item.fullName}</p>
+            <h3 className="font-semibold text-black text-[16px] mb-1">{item.shtrikhkodi}</h3>
+            <p className="text-black text-[16px]">{item.mimgebi}</p>
           </div>
           <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusColors[item.status]}`}>
             {statusLabels[item.status]}
@@ -131,17 +132,31 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
         
         <div className="grid grid-cols-1 gap-2 text-[16px]">
           <div className="flex items-center gap-2">
+            <span className="text-black">გამომცემელი:</span>
+            <span className="text-black">{item.gamomcemeli}</span>
+          </div>
+          <div className="flex items-center gap-2">
             <span className="text-black">ტელეფონი:</span>
-            <span className="text-black">{item.phone}</span>
+            <span className="text-black">{item.telefoni}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-black">წონა:</span>
+            <span className="text-black">{item.tsona} kg</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-black">ქალაქი:</span>
-            <span className="text-black">{item.city}</span>
+            <span className="text-black">{item.kalaki}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">მისამართი:</span>
-            <span className="text-black break-all">{item.address}</span>
+            <span className="text-black">საქ.გადახდა:</span>
+            <span className="text-black break-all">{item.sakGadakhda}</span>
           </div>
+          {item.tarighi && (
+            <div className="flex items-center gap-2">
+              <span className="text-black">თარიღი:</span>
+              <span className="text-black">{formatDateGeorgian(item.tarighi.toString())}</span>
+            </div>
+          )}
         </div>
 
         {onStatusChange && (
@@ -237,16 +252,19 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     />
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    ამანათის ნომერი
+                    შტრიხ კოდი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    სახელი
+                    გამომცემელი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    გვარი
+                    მიმღები
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
                     ტელეფონი
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
+                    წონა
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
                     ქალაქი
@@ -255,10 +273,7 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     თარიღი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
-                    სტატუსი
-                  </th>
-                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
-                    წონა (kg)
+                    საქ. გაცვლა
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     მოქმედებები
@@ -278,27 +293,32 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  font-medium text-black  ">
-                        {item.productNumber}
+                        {item.shtrikhkodi}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black ">
-                        {item.Name}
+                        {item.gamomcemeli}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black ">
-                        {item.fullName}
+                        {item.mimgebi}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black break-all">
-                        {item.phone}
+                        {item.telefoni}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px]  text-black">
+                        {item.tsona} kg
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-[15px]  text-black ">
-                        {item.city}
+                        {item.kalaki}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
@@ -331,11 +351,6 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
                           {statusLabels[item.status]}
                         </span>
                       )}
-                    </td>
-                    <td className="px-4 lg:px-6 py-4">
-                      <div className="text-[15px]  text-black">
-                        {item.weight}
-                      </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 ">

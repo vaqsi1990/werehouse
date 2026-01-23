@@ -18,13 +18,14 @@ type FormMode = "manual" | "file";
 export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSection }: AddProductFormProps) {
   const [mode, setMode] = useState<FormMode>("manual");
   const [formData, setFormData] = useState({
-    productNumber: "",
-    Name: "",
-    fullName: "",
-    phone: "",
-    city: "",
-    address: "",
-    weight: "",
+    shtrikhkodi: "",
+    gamomcemeli: "",
+    mimgebi: "",
+    telefoni: "",
+    kalaki: "",
+    sakGadakhda: "",
+    tarighi: "",
+    tsona: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fileError, setFileError] = useState<string>("");
@@ -58,13 +59,14 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
       
       // Reset form
       setFormData({
-        productNumber: "",
-        Name: "",
-        fullName: "",
-        phone: "",
-        city: "",
-        address: "",
-        weight: "",
+        shtrikhkodi: "",
+        gamomcemeli: "",
+        mimgebi: "",
+        telefoni: "",
+        kalaki: "",
+        sakGadakhda: "",
+        tarighi: "",
+        tsona: "",
       });
       setErrors({});
       
@@ -101,9 +103,30 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
             return;
           }
 
-          // Expected columns: productNumber, Name, fullName, phone, city, address
+          // Expected columns: shtrikhkodi, gamomcemeli, mimgebi, telefoni, tsona, kalaki, sakGadakhda, tarighi
           // Try to auto-detect column mapping
           const headers = Object.keys(jsonData[0] || {});
+          
+          // Create a case-insensitive lookup map with normalized keys
+          const createLookupMap = (row: any) => {
+            const map: Record<string, any> = {};
+            Object.keys(row).forEach(key => {
+              // Store original key
+              map[key] = row[key];
+              // Store lowercase version
+              map[key.toLowerCase()] = row[key];
+              // Store normalized version (remove extra spaces, special chars)
+              const normalized = key.toLowerCase().replace(/\s+/g, ' ').trim();
+              map[normalized] = row[key];
+              // Store without spaces
+              map[key.toLowerCase().replace(/\s+/g, '')] = row[key];
+              // Store without dots
+              map[key.toLowerCase().replace(/\./g, '')] = row[key];
+              // Store without spaces and dots
+              map[key.toLowerCase().replace(/\s+/g, '').replace(/\./g, '')] = row[key];
+            });
+            return map;
+          };
           
           jsonData.forEach((row, index) => {
             try {
@@ -111,38 +134,155 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               const rowValues = Object.values(row).filter(v => v !== null && v !== undefined && String(v).trim() !== "");
               if (rowValues.length === 0) return;
 
-              // Try different possible column names (case-insensitive)
+              const rowMap = createLookupMap(row);
+              
+              // Try different possible column names (case-insensitive, with normalization)
               const getValue = (keys: string[]) => {
                 for (const key of keys) {
-                  const value = row[key];
-                  if (value !== null && value !== undefined && String(value).trim() !== "") {
-                    return String(value).trim();
+                  // Try exact match first
+                  if (rowMap[key] !== undefined) {
+                    const value = rowMap[key];
+                    if (value !== null && value !== undefined && String(value).trim() !== "") {
+                      return String(value).trim();
+                    }
+                  }
+                  // Try case-insensitive match
+                  const lowerKey = key.toLowerCase();
+                  if (rowMap[lowerKey] !== undefined) {
+                    const value = rowMap[lowerKey];
+                    if (value !== null && value !== undefined && String(value).trim() !== "") {
+                      return String(value).trim();
+                    }
+                  }
+                  // Try normalized match (remove spaces)
+                  const normalizedKey = lowerKey.replace(/\s+/g, '');
+                  if (rowMap[normalizedKey] !== undefined) {
+                    const value = rowMap[normalizedKey];
+                    if (value !== null && value !== undefined && String(value).trim() !== "") {
+                      return String(value).trim();
+                    }
+                  }
+                  // Try without dots
+                  const noDotsKey = lowerKey.replace(/\./g, '');
+                  if (rowMap[noDotsKey] !== undefined) {
+                    const value = rowMap[noDotsKey];
+                    if (value !== null && value !== undefined && String(value).trim() !== "") {
+                      return String(value).trim();
+                    }
+                  }
+                  // Try partial match - check if any header contains the key
+                  const headerKeys = Object.keys(row);
+                  for (const headerKey of headerKeys) {
+                    const normalizedHeader = headerKey.toLowerCase().replace(/\s+/g, '').replace(/\./g, '');
+                    const normalizedSearch = lowerKey.replace(/\s+/g, '').replace(/\./g, '');
+                    if (normalizedHeader.includes(normalizedSearch) || normalizedSearch.includes(normalizedHeader)) {
+                      const value = row[headerKey];
+                      if (value !== null && value !== undefined && String(value).trim() !== "") {
+                        return String(value).trim();
+                      }
+                    }
                   }
                 }
                 return "";
               };
 
-              const productNumber = getValue(["ამანათის ნომერი", "productNumber", "Product Number", "A", "A1"]);
-              const name = getValue(["სახელი", "კლიენტის სახელი", "Name", "First Name", "B", "B1"]);
-              const fullName = getValue(["გვარი", "კლიენტის გვარი", "fullName", "Last Name", "C", "C1"]);
-              const phone = getValue(["ტელეფონი", "phone", "Phone", "D", "D1"]);
-              const city = getValue(["ქალაქი", "city", "City", "E", "E1"]);
-              const address = getValue(["მისამართი", "address", "Address", "F", "F1"]);
-              const weight = getValue(["წონა", "weight", "Weight", "G", "G1"]);
+              const shtrikhkodi = getValue(["შტრიხ კოდი", "shtrikhkodi", "mtrikhkodi", "productNumber", "Product Code", "product code", "კოდი", "A", "A1"]);
+              const gamomcemeli = getValue(["გამომცემელი", "გამომგზავნი", "gamomcemeli", "Sender", "sender", "B", "B1"]);
+              const mimgebi = getValue(["მიმღები", "mimgebi", "Receiver", "receiver", "Name", "name", "სახელი", "C", "C1"]);
+              const telefoni = getValue(["ტელეფონი", "telefoni", "phone", "Phone", "ტელ", "D", "D1"]);
+              const tsona = getValue(["წონა", "tsona", "weight", "Weight", "წონა (kg)", "E", "E1"]);
+              const kalaki = getValue(["ქალაქი", "kalaki", "city", "City", "F", "F1"]);
+              const sakGadakhda = getValue(["საქ.გადახდა", "საქ გადახდა", "საქგადახდა", "sakGadakhda", "sak.gadakhda", "sak gadakhda", "sakgadakhda", "Payment", "payment", "გადახდა", "G", "G1"]);
+              const tarighiRaw = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"]);
 
-              if (productNumber && name && fullName && phone && city && address && weight) {
-                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
-                const item = itemSchema.parse({
-                  productNumber,
-                  Name: name,
-                  fullName,
-                  phone,
-                  city,
-                  address,
-                  weight,
-                  status: defaultStatus,
+              // Convert date from various formats to ISO-8601
+              const convertDate = (dateStr: string): string | undefined => {
+                if (!dateStr || dateStr.trim() === "") return undefined;
+                
+                try {
+                  // Try parsing as Excel date (MM/DD/YYYY or DD/MM/YYYY)
+                  const dateParts = dateStr.trim().split(/[\/\-\.]/);
+                  if (dateParts.length === 3) {
+                    let day: number, month: number, year: number;
+                    
+                    // Try MM/DD/YYYY format first (US format)
+                    if (parseInt(dateParts[0]) > 12) {
+                      // DD/MM/YYYY format (European format)
+                      day = parseInt(dateParts[0]);
+                      month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+                      year = parseInt(dateParts[2]);
+                    } else {
+                      // MM/DD/YYYY format
+                      month = parseInt(dateParts[0]) - 1; // Month is 0-indexed
+                      day = parseInt(dateParts[1]);
+                      year = parseInt(dateParts[2]);
+                    }
+                    
+                    // Handle 2-digit years
+                    if (year < 100) {
+                      year += 2000;
+                    }
+                    
+                    const date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) {
+                      return date.toISOString();
+                    }
+                  }
+                  
+                  // Try parsing as ISO date string
+                  const isoDate = new Date(dateStr);
+                  if (!isNaN(isoDate.getTime())) {
+                    return isoDate.toISOString();
+                  }
+                } catch (e) {
+                  console.warn("Date conversion failed:", dateStr, e);
+                }
+                
+                return undefined;
+              };
+
+              // Handle both string and number (Excel serial number) formats
+              const tarighi = convertDate(tarighiRaw || (rowMap["თარიღი"] !== undefined ? rowMap["თარიღი"] : undefined));
+
+              // Allow empty sakGadakhda (use empty string as default)
+              const sakGadakhdaValue = sakGadakhda || "";
+
+              // Check required fields (sakGadakhda is now optional, can be empty)
+              if (shtrikhkodi && gamomcemeli && mimgebi && telefoni && tsona && kalaki) {
+                try {
+                  const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
+                  const item = itemSchema.parse({
+                    shtrikhkodi,
+                    gamomcemeli,
+                    mimgebi,
+                    telefoni,
+                    tsona,
+                    kalaki,
+                    sakGadakhda: sakGadakhdaValue,
+                    tarighi: tarighi || undefined,
+                    status: defaultStatus,
+                  });
+                  items.push(item);
+                } catch (validationError: any) {
+                  console.warn(`Row ${index + 2} validation failed:`, validationError.message, {
+                    shtrikhkodi,
+                    gamomcemeli,
+                    mimgebi,
+                    telefoni,
+                    tsona,
+                    kalaki,
+                    sakGadakhda: sakGadakhdaValue,
+                  });
+                }
+              } else {
+                console.warn(`Row ${index + 2} missing required fields:`, {
+                  hasShtrikhkodi: !!shtrikhkodi,
+                  hasGamomcemeli: !!gamomcemeli,
+                  hasMimgebi: !!mimgebi,
+                  hasTelefoni: !!telefoni,
+                  hasTsona: !!tsona,
+                  hasKalaki: !!kalaki,
                 });
-                items.push(item);
               }
             } catch (err) {
               console.warn(`Row ${index + 2} failed validation:`, err);
@@ -150,7 +290,8 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           });
 
           if (items.length === 0) {
-            reject(new Error("ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ სვეტების სახელები."));
+            const availableHeaders = headers.length > 0 ? headers.join(", ") : "სვეტები ვერ მოიძებნა";
+            reject(new Error(`ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ სვეტების სახელები.\n\nმოსალოდნელი სვეტები: შტრიხ კოდი, გამომცემელი (ან გამომგზავნი), მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი\n\nნაპოვნი სვეტები: ${availableHeaders}`));
           } else {
             resolve(items);
           }
@@ -185,27 +326,77 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               const data: any = {};
 
               lines.forEach(line => {
-                if (line.includes("ამანათის ნომერი") || line.includes("Product Number")) {
-                  data.productNumber = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("სახელი") || line.includes("კლიენტის სახელი") || line.includes("Name") || line.includes("First Name")) {
-                  data.Name = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("გვარი") || line.includes("კლიენტის გვარი") || line.includes("fullName") || line.includes("Last Name")) {
-                  data.fullName = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("ტელეფონი") || line.includes("phone") || line.includes("Phone")) {
-                  data.phone = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("ქალაქი") || line.includes("city") || line.includes("City")) {
-                  data.city = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("მისამართი") || line.includes("address") || line.includes("Address")) {
-                  data.address = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("წონა") || line.includes("weight") || line.includes("Weight")) {
-                  data.weight = line.split(/[:：]/)[1]?.trim() || "";
+                const lowerLine = line.toLowerCase();
+                if (line.includes("შტრიხ კოდი") || lowerLine.includes("product code") || lowerLine.includes("shtrikhkodi") || lowerLine.includes("mtrikhkodi") || lowerLine.includes("productnumber")) {
+                  data.shtrikhkodi = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("გამომცემელი") || line.includes("გამომგზავნი") || lowerLine.includes("sender") || lowerLine.includes("gamomcemeli")) {
+                  data.gamomcemeli = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("მიმღები") || lowerLine.includes("receiver") || lowerLine.includes("mimgebi") || lowerLine.includes("name")) {
+                  data.mimgebi = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("ტელეფონი") || lowerLine.includes("telefoni") || lowerLine.includes("phone")) {
+                  data.telefoni = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("წონა") || lowerLine.includes("tsona") || lowerLine.includes("weight")) {
+                  data.tsona = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("ქალაქი") || lowerLine.includes("kalaki") || lowerLine.includes("city")) {
+                  data.kalaki = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("საქ.გადახდა") || line.includes("საქ გადახდა") || line.includes("საქგადახდა") || line.includes("გადახდა") || lowerLine.includes("sakgadakhda") || lowerLine.includes("sak.gadakhda") || lowerLine.includes("sak gadakhda") || lowerLine.includes("payment")) {
+                  data.sakGadakhda = line.split(/[:：]/)[1]?.trim() || "";
+                } else if (line.includes("თარიღი") || lowerLine.includes("tarighi") || lowerLine.includes("date")) {
+                  data.tarighi = line.split(/[:：]/)[1]?.trim() || "";
                 }
               });
 
-              if (data.productNumber && data.Name && data.fullName && data.phone && data.city && data.address && data.weight) {
+              // Convert date from various formats to ISO-8601
+              const convertDate = (dateStr: string): string | undefined => {
+                if (!dateStr || dateStr.trim() === "") return undefined;
+                
+                try {
+                  // Try parsing as Excel date (MM/DD/YYYY or DD/MM/YYYY)
+                  const dateParts = dateStr.trim().split(/[\/\-\.]/);
+                  if (dateParts.length === 3) {
+                    let day: number, month: number, year: number;
+                    
+                    // Try MM/DD/YYYY format first (US format)
+                    if (parseInt(dateParts[0]) > 12) {
+                      // DD/MM/YYYY format (European format)
+                      day = parseInt(dateParts[0]);
+                      month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+                      year = parseInt(dateParts[2]);
+                    } else {
+                      // MM/DD/YYYY format
+                      month = parseInt(dateParts[0]) - 1; // Month is 0-indexed
+                      day = parseInt(dateParts[1]);
+                      year = parseInt(dateParts[2]);
+                    }
+                    
+                    // Handle 2-digit years
+                    if (year < 100) {
+                      year += 2000;
+                    }
+                    
+                    const date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) {
+                      return date.toISOString();
+                    }
+                  }
+                  
+                  // Try parsing as ISO date string
+                  const isoDate = new Date(dateStr);
+                  if (!isNaN(isoDate.getTime())) {
+                    return isoDate.toISOString();
+                  }
+                } catch (e) {
+                  console.warn("Date conversion failed:", dateStr, e);
+                }
+                
+                return undefined;
+              };
+
+              if (data.shtrikhkodi && data.gamomcemeli && data.mimgebi && data.telefoni && data.tsona && data.kalaki && data.sakGadakhda) {
                 const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
+                  tarighi: convertDate(data.tarighi),
                   status: defaultStatus,
                 });
                 items.push(item);
@@ -297,55 +488,55 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ამანათის ნომერი <span className="text-red-500">*</span>
+          შტრიხ კოდი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.productNumber}
-          onChange={(e) => handleChange("productNumber", e.target.value)}
+          value={formData.shtrikhkodi}
+          onChange={(e) => handleChange("shtrikhkodi", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.productNumber ? "border-red-500" : "border-gray-300"
+            errors.shtrikhkodi ? "border-red-500" : "border-gray-300"
           }`}
         
         />
-        {errors.productNumber && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.productNumber}</p>
+        {errors.shtrikhkodi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.shtrikhkodi}</p>
         )}
       </div>
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          სახელი <span className="text-red-500">*</span>
+          გამომცემელი <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.Name}
-          onChange={(e) => handleChange("Name", e.target.value)}
+          value={formData.gamomcemeli}
+          onChange={(e) => handleChange("gamomcemeli", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.Name ? "border-red-500" : "border-gray-300"
+            errors.gamomcemeli ? "border-red-500" : "border-gray-300"
           }`}
         
         />
-        {errors.Name && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.Name}</p>
+        {errors.gamomcemeli && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.gamomcemeli}</p>
         )}
       </div>
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გვარი <span className="text-red-500">*</span>
+          მიმღები <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.fullName}
-          onChange={(e) => handleChange("fullName", e.target.value)}
+          value={formData.mimgebi}
+          onChange={(e) => handleChange("mimgebi", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.fullName ? "border-red-500" : "border-gray-300"
+            errors.mimgebi ? "border-red-500" : "border-gray-300"
           }`}
        
         />
-        {errors.fullName && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.fullName}</p>
+        {errors.mimgebi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.mimgebi}</p>
         )}
       </div>
 
@@ -355,51 +546,15 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         </label>
         <input
           type="text"
-          value={formData.phone}
-          onChange={(e) => handleChange("phone", e.target.value)}
+          value={formData.telefoni}
+          onChange={(e) => handleChange("telefoni", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.phone ? "border-red-500" : "border-gray-300"
+            errors.telefoni ? "border-red-500" : "border-gray-300"
           }`}
       
         />
-        {errors.phone && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.phone}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ქალაქი <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.city}
-          onChange={(e) => handleChange("city", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.city ? "border-red-500" : "border-gray-300"
-          }`}
-      
-        />
-        {errors.city && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.city}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          მისამართი <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.address}
-          onChange={(e) => handleChange("address", e.target.value)}
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.address ? "border-red-500" : "border-gray-300"
-          }`}
-     
-        />
-        {errors.address && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.address}</p>
+        {errors.telefoni && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.telefoni}</p>
         )}
       </div>
 
@@ -409,15 +564,69 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         </label>
         <input
           type="text"
-          value={formData.weight}
-          onChange={(e) => handleChange("weight", e.target.value)}
+          value={formData.tsona}
+          onChange={(e) => handleChange("tsona", e.target.value)}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
-            errors.weight ? "border-red-500" : "border-gray-300"
+            errors.tsona ? "border-red-500" : "border-gray-300"
           }`}
           placeholder="მაგ: 2.5"
         />
-        {errors.weight && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.weight}</p>
+        {errors.tsona && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.tsona}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          ქალაქი <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.kalaki}
+          onChange={(e) => handleChange("kalaki", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.kalaki ? "border-red-500" : "border-gray-300"
+          }`}
+      
+        />
+        {errors.kalaki && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.kalaki}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          საქ.გადახდა <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.sakGadakhda}
+          onChange={(e) => handleChange("sakGadakhda", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.sakGadakhda ? "border-red-500" : "border-gray-300"
+          }`}
+     
+        />
+        {errors.sakGadakhda && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.sakGadakhda}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[16px] font-medium text-gray-700 mb-1">
+          თარიღი
+        </label>
+        <input
+          type="date"
+          value={formData.tarighi}
+          onChange={(e) => handleChange("tarighi", e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
+            errors.tarighi ? "border-red-500" : "border-gray-300"
+          }`}
+     
+        />
+        {errors.tarighi && (
+          <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
         )}
       </div>
 
@@ -485,7 +694,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-700 font-medium mb-2">Excel ფაილის ფორმატი:</p>
               <p className="text-xs text-gray-600">
-                სვეტები: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა (kg)
+                სვეტები: შტრიხ კოდი, გამომცემელი, მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი
               </p>
             </div>
           </div>
