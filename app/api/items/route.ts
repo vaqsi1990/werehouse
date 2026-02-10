@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
+import { buildStatusSmsText, sendSmsViaMsgGe } from "@/app/lib/sms";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 export async function GET() {
   try {
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
     console.log("Creating item with data:", body);
     
     // tarighi is now stored as string in DD/MM/YYYY format
-    const itemData: any = { ...body };
+    const itemData = { ...body } as Prisma.ItemCreateInput;
     // If tarighi is empty or invalid, set to null
     if (itemData.tarighi !== undefined && itemData.tarighi !== null && itemData.tarighi !== "") {
       const tarighiStr = String(itemData.tarighi).trim();
@@ -41,19 +43,50 @@ export async function POST(request: Request) {
       data: itemData,
     });
     console.log("Item created successfully:", item);
-    return NextResponse.json(item, { status: 201 });
-  } catch (error: any) {
+
+    // ავტომატური SMS გაგზავნა მხოლოდ მაშინ, თუ სტატუსი ერთ-ერთი არსებულიდანაა
+    // (STOPPED, IN_WAREHOUSE, RELEASED, REGION) და ტელეფონის ველი შევსებულია.
+    // SMS-ის ჩავარდნა არ აფუჭებს ნივთის შექმნას.
+    let smsSent = item.smsSent;
+    const canNotifyStatus =
+      (item.status === "IN_WAREHOUSE" ||
+        item.status === "STOPPED" ||
+        item.status === "RELEASED" ||
+        item.status === "REGION") &&
+      !item.smsSent &&
+      item.telefoni;
+
+    if (canNotifyStatus) {
+      try {
+        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "");
+        await sendSmsViaMsgGe({ to: item.telefoni, text });
+        smsSent = true;
+        await prisma.item.update({
+          where: { id: item.id },
+          data: { smsSent: true },
+        });
+      } catch (smsError) {
+        console.error("Failed to send SMS for item:", item.id, smsError);
+      }
+    }
+
+    return NextResponse.json({ ...item, smsSent }, { status: 201 });
+  } catch (error: unknown) {
     console.error("Error creating item:", error);
-    console.error("Error details:", {
-      message: error?.message,
-      code: error?.code,
-      meta: error?.meta,
-    });
+    const details =
+      typeof error === "object" && error !== null
+        ? {
+            message: "message" in error ? String((error as { message?: unknown }).message) : undefined,
+            code: "code" in error ? String((error as { code?: unknown }).code) : undefined,
+            meta: "meta" in error ? (error as { meta?: unknown }).meta : undefined,
+          }
+        : { message: undefined, code: undefined, meta: undefined };
+    console.error("Error details:", details);
     return NextResponse.json(
       { 
         error: "Failed to create item",
-        message: error?.message || "Unknown error",
-        code: error?.code || "UNKNOWN",
+        message: error instanceof Error ? error.message : "Unknown error",
+        code: details.code || "UNKNOWN",
       },
       { status: 500 }
     );
