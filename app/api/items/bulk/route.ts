@@ -78,46 +78,37 @@ export async function POST(request: Request) {
 
     console.log(`Successfully created ${createdItems.length} items`);
 
-    // Auto-send SMS for each imported item (non-blocking for overall import success).
+    // Auto-send SMS for each imported item – თანმიმდევრულად, რომ ყოველი ნივთის ტელეფონზე მივიდეს მხოლოდ მისი SMS.
     const smsCandidates = createdItems.filter((it) => {
+      const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
       const canNotifyStatus =
         (it.status === "IN_WAREHOUSE" ||
           it.status === "STOPPED" ||
           it.status === "RELEASED" ||
           it.status === "REGION") &&
         !it.smsSent &&
-        Boolean(it.telefoni);
+        hasPhone;
       return canNotifyStatus;
     });
 
-    const concurrency = 5;
     const successIds: string[] = [];
     const failures: Array<{ id: string; to: string; message: string }> = [];
 
-    let cursor = 0;
-    const workerCount = Math.min(concurrency, smsCandidates.length);
-
-    const workers = Array.from({ length: workerCount }, async () => {
-      while (true) {
-        const current = smsCandidates[cursor];
-        cursor += 1;
-        if (!current) break;
-
-        try {
-          const text = buildStatusSmsText(current.status, current.shtrikhkodi || "");
-          await sendSmsViaMsgGe({ to: current.telefoni, text });
-          successIds.push(current.id);
-        } catch (e: unknown) {
-          failures.push({
-            id: current.id,
-            to: current.telefoni,
-            message: e instanceof Error ? e.message : "SMS send failed",
-          });
-        }
+    for (const item of smsCandidates) {
+      const toPhone = String(item.telefoni).trim();
+      try {
+        const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
+        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
+        await sendSmsViaMsgGe({ to: toPhone, text });
+        successIds.push(item.id);
+      } catch (e: unknown) {
+        failures.push({
+          id: item.id,
+          to: toPhone,
+          message: e instanceof Error ? e.message : "SMS send failed",
+        });
       }
-    });
-
-    await Promise.all(workers);
+    }
 
     if (successIds.length > 0) {
       await prisma.item.updateMany({

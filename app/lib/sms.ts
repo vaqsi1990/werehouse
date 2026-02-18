@@ -1,3 +1,10 @@
+/**
+ * MS Group API 1.0 – sendsms.php & track.php
+ * https://bi.msg.ge – Send SMS and check delivery status via HTTP GET.
+ * Georgian/Unicode: use utf=1 (7bit 160 chars, unicode 70 chars).
+ * Shared/cloud hosting: set MSG_HEADER with alternate password from your manager.
+ */
+
 type SendSmsInput = {
   to: string;
   text: string;
@@ -126,10 +133,13 @@ export async function sendSmsViaMsgGe(input: SendSmsInput) {
   if (needsUnicode(input.text)) params.set("utf", "1");
   url.search = params.toString();
 
+  const safeUrl = url.toString().replace(/password=[^&]*/i, "password=***");
+  console.log("[SMS] Request URL", safeUrl);
+
   const headers: Record<string, string> = {};
   if (outboundHeader) {
-    // Some firewalls/providers require a static header value to allow outgoing SMS requests.
-    headers["Header"] = outboundHeader;
+    // Shared hosting / cloud: alternate password in MSG_HEADER (per MS Group API docs).
+    headers["MSG_HEADER"] = outboundHeader;
   }
 
   const res = await fetch(url.toString(), {
@@ -138,6 +148,8 @@ export async function sendSmsViaMsgGe(input: SendSmsInput) {
     headers,
   });
   const providerResponse = (await res.text()).trim();
+
+  console.log("[SMS] Provider response", { httpStatus: res.status, body: providerResponse });
 
  
   if (!providerResponse || providerResponse.length === 0) {
@@ -151,13 +163,11 @@ export async function sendSmsViaMsgGe(input: SendSmsInput) {
     });
   }
 
-  // Extract response code (first 4 digits before dash, or first 4 characters)
-  const responseCode = providerResponse.includes("-") 
-    ? providerResponse.split("-")[0] 
-    : providerResponse.substring(0, 4);
-  
+  // Response format: "CODE-MESSAGE_ID" (e.g. 0000-000001)
+  const [responseCode, messageIdRaw] = providerResponse.includes("-")
+    ? providerResponse.split("-", 2)
+    : [providerResponse.substring(0, 4), ""];
 
-  
   if (!res.ok) {
     console.error("[SMS] Provider HTTP error", {
       toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
@@ -175,25 +185,25 @@ export async function sendSmsViaMsgGe(input: SendSmsInput) {
     let errorMessage = `SMS provider error (code: ${responseCode})`;
     switch (responseCode) {
       case "0001":
-        errorMessage = "Invalid SMS credentials or restricted IP address";
+        errorMessage = "Invalid password or nickname or restricted IP address";
         break;
       case "0003":
-        errorMessage = "Required SMS fields are empty";
+        errorMessage = "Required fields are empty (username, password, client_id, service_id)";
         break;
       case "0005":
-        errorMessage = "SMS message body is blank";
+        errorMessage = "Blank message body";
         break;
       case "0007":
-        errorMessage = "Invalid phone number format";
+        errorMessage = "Invalid phone number";
         break;
       case "0008":
-        errorMessage = "Insufficient SMS balance";
+        errorMessage = "Insufficient balance";
         break;
       case "0009":
         errorMessage = "Invalid sender ID";
         break;
       case "0010":
-        errorMessage = "Message contains banned word";
+        errorMessage = "The message contains banned word";
         break;
       default:
         errorMessage = `SMS provider error (code: ${responseCode})`;
@@ -212,11 +222,87 @@ export async function sendSmsViaMsgGe(input: SendSmsInput) {
     });
   }
 
+  const messageId = messageIdRaw?.trim() || "";
+
   console.log("[SMS] Successfully sent", {
     toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
     providerResponse,
+    messageId: messageId || undefined,
   });
 
-  return { providerResponse };
+  return { providerResponse, messageId };
+}
+
+/** track.php delivery status codes (MS Group API 1.0) */
+export type SmsDeliveryStatus =
+  | 0   // Pending
+  | 1   // Was sent to a subscriber
+  | 2   // Failed to send to a subscriber
+  | 4   // Status pending
+  | 8   // Submitted to the SMS Center
+  | 16  // Rejected by SMS Center
+  | 64; // Incorrect password or nickname or restricted IP address
+
+const DELIVERY_STATUS_LABELS: Record<number, string> = {
+  0: "Pending",
+  1: "Was sent to a subscriber",
+  2: "Failed to send to a subscriber",
+  4: "Status pending",
+  8: "Submitted to the SMS Center",
+  16: "Rejected by SMS Center",
+  64: "Incorrect password or nickname or restricted IP address",
+};
+
+/**
+ * Check SMS delivery status (track.php).
+ * Requires: message_id (from send response), username, password, client_id.
+ */
+export async function checkSmsDeliveryStatus(messageId: string): Promise<{
+  status: SmsDeliveryStatus;
+  statusLabel: string;
+  raw: string;
+}> {
+  const username = process.env.SMSUSERNAME ?? "expresslogiticservice";
+  const password = process.env.SMSPASSWORD ?? "Nn8I4IgS3y";
+  const clientId = process.env.SMSCLIENTID ?? "1156";
+  const outboundHeader = process.env.SMS_MSG_HEADER ?? "xL6nn@6fsMc";
+
+  if (!username || !password || !clientId) {
+    throw new Error("SMS credentials not configured for track (username, password, client_id)");
+  }
+
+  const url = new URL("https://bi.msg.ge/track.php");
+  url.search = new URLSearchParams({
+    message_id: String(messageId),
+    username,
+    password,
+    client_id: clientId,
+  }).toString();
+  const trackUrl = url.toString();
+
+  console.log("[SMS] Track request", { messageId, trackUrl: trackUrl.replace(/password=[^&]*/i, "password=***") });
+
+  const headers: Record<string, string> = {};
+  if (outboundHeader) headers["MSG_HEADER"] = outboundHeader;
+
+  const res = await fetch(trackUrl, { method: "GET", cache: "no-store", headers });
+  const raw = (await res.text()).trim();
+
+  console.log("[SMS] Track response", { httpStatus: res.status, raw });
+
+  const code = parseInt(raw, 10);
+
+  if (!res.ok) {
+    throw new SmsProviderError(`Track request failed (HTTP ${res.status})`, {
+      status: res.status,
+      providerResponse: raw,
+    });
+  }
+
+  const status = isNaN(code) ? 0 : (code as SmsDeliveryStatus);
+  const statusLabel = DELIVERY_STATUS_LABELS[status] ?? `Unknown (${raw})`;
+
+  console.log("[SMS] Delivery status", { messageId, status, statusLabel });
+  return { status, statusLabel, raw };
 }
 

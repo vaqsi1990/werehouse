@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { buildStatusSmsText, sendSmsViaMsgGe } from "@/app/lib/sms";
 
 export async function DELETE(
   request: Request,
@@ -50,7 +51,33 @@ export async function PUT(
       data: body,
     });
     console.log("Item updated successfully:", item);
-    return NextResponse.json(item);
+
+    // SMS სტატუსის შეცვლისას – თუ ახალი სტატუსი ერთ-ერთია (IN_WAREHOUSE, STOPPED, RELEASED, REGION) და ტელეფონი არის
+    const canNotifyStatus =
+      (item.status === "IN_WAREHOUSE" ||
+        item.status === "STOPPED" ||
+        item.status === "RELEASED" ||
+        item.status === "REGION") &&
+      item.telefoni?.trim();
+
+    let smsSent = item.smsSent;
+    if (canNotifyStatus) {
+      try {
+        const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
+        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
+        await sendSmsViaMsgGe({ to: item.telefoni, text });
+        smsSent = true;
+        await prisma.item.update({
+          where: { id: item.id },
+          data: { smsSent: true },
+        });
+        console.log("[SMS] Sent on status update", { itemId: item.id, status: item.status });
+      } catch (smsError) {
+        console.error("Failed to send SMS on status update:", item.id, smsError);
+      }
+    }
+
+    return NextResponse.json({ ...item, smsSent });
   } catch (error: any) {
     console.error("Error updating item:", error);
     console.error("Error details:", {
