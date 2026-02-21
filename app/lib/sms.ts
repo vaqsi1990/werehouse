@@ -82,13 +82,7 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
     );
   }
 
-  // REGION
-  const regionText = regionName && regionName.trim().length > 0 ? regionName.trim() : "რეგიონი";
-  return (
-    `მოგესალმებით, კომპანია Express Logistic Service გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გამოგეგზავნებათ ${regionText}. ` +
-    `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
-    `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
-  );
+
 }
 
 export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {

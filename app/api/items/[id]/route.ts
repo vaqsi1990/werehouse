@@ -52,12 +52,11 @@ export async function PUT(
     });
     console.log("Item updated successfully:", item);
 
-    // SMS სტატუსის შეცვლისას – თუ ახალი სტატუსი ერთ-ერთია (IN_WAREHOUSE, STOPPED, RELEASED, REGION) და ტელეფონი არის
+    // SMS სტატუსის შეცვლისას – თუ ახალი სტატუსი ერთ-ერთია (IN_WAREHOUSE, STOPPED, RELEASED); REGION-ზე SMS არ იგზავნება
     const canNotifyStatus =
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
-        item.status === "RELEASED" ||
-        item.status === "REGION") &&
+        item.status === "RELEASED") &&
       item.telefoni?.trim();
 
     let smsSent = item.smsSent;

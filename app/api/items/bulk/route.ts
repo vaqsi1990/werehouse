@@ -79,13 +79,13 @@ export async function POST(request: Request) {
     console.log(`Successfully created ${createdItems.length} items`);
 
     // Auto-send SMS for each imported item – თანმიმდევრულად, რომ ყოველი ნივთის ტელეფონზე მივიდეს მხოლოდ მისი SMS.
+    // REGION-ზე SMS არ იგზავნება
     const smsCandidates = createdItems.filter((it) => {
       const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
       const canNotifyStatus =
         (it.status === "IN_WAREHOUSE" ||
           it.status === "STOPPED" ||
-          it.status === "RELEASED" ||
-          it.status === "REGION") &&
+          it.status === "RELEASED") &&
         !it.smsSent &&
         hasPhone;
       return canNotifyStatus;
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
         const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
-        await sendSmsViaMsgGe({ to: toPhone, text });
+    
         successIds.push(item.id);
       } catch (e: unknown) {
         failures.push({

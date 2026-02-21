@@ -48,11 +48,11 @@ export async function POST(request: Request) {
     // (STOPPED, IN_WAREHOUSE, RELEASED, REGION) და ტელეფონის ველი შევსებულია.
     // SMS-ის ჩავარდნა არ აფუჭებს ნივთის შექმნას.
     let smsSent = item.smsSent;
+    // REGION-ზე SMS არ იგზავნება
     const canNotifyStatus =
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
-        item.status === "RELEASED" ||
-        item.status === "REGION") &&
+        item.status === "RELEASED") &&
       !item.smsSent &&
       item.telefoni;
 
