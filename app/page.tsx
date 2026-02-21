@@ -651,6 +651,8 @@ export default function Home() {
             </div>
             <InventoryList
               items={paginatedItems}
+              allItems={filteredItems}
+              selectionScopeKey={`${activeSection}-${searchQuery}`}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
               onStatusChange={handleStatusChange}

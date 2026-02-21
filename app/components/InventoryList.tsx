@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import Modal from "./Modal";
 
 interface Item {
   id: string;
@@ -19,19 +21,28 @@ interface Item {
 
 interface InventoryListProps {
   items: Item[];
+  /** ყველა ნივთი მიმდინარე ფილტრში (ყველა გვერდი) – SMS და მონიშვნა ყველგან იმუშავებს */
+  allItems?: Item[];
+  /** სექცია/ფილტრის შეცვლისას მონიშვნა იშლება (მაგ. activeSection) */
+  selectionScopeKey?: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
   onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
 }
 
-export default function InventoryList({ items, onEdit, onDelete, onStatusChange, onBulkStatusChange }: InventoryListProps) {
+export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange }: InventoryListProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  
-  // Reset selection when items change (e.g., after status update)
+  const [smsModalOpen, setSmsModalOpen] = useState(false);
+  const [smsText, setSmsText] = useState("");
+  const [smsSending, setSmsSending] = useState(false);
+
+  const itemsForSelection = allItems ?? items;
+
+  // Reset selection when section/search changes, not when page changes
   useEffect(() => {
     setSelectedItems(new Set());
-  }, [items]);
+  }, [selectionScopeKey]);
 
   // Format date in Georgian
   const formatDateGeorgian = (dateString: string) => {
@@ -80,10 +91,10 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.size === items.length) {
+    if (selectedItems.size === itemsForSelection.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(items.map((item) => item.id)));
+      setSelectedItems(new Set(itemsForSelection.map((item) => item.id)));
     }
   };
 
@@ -91,6 +102,48 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
     if (onBulkStatusChange && selectedItems.size > 0) {
       onBulkStatusChange(Array.from(selectedItems), newStatus);
       setSelectedItems(new Set());
+    }
+  };
+
+  const handleOpenSmsModal = () => setSmsModalOpen(true);
+
+  const handleSendBulkSms = async () => {
+    const selected = itemsForSelection.filter((i) => selectedItems.has(i.id));
+    const phones = selected
+      .map((i) => (i.telefoni != null ? String(i.telefoni).trim() : ""))
+      .filter((t) => t !== "");
+    if (phones.length === 0) {
+      toast.error("მონიშნულ ნივთებს არ აქვთ ტელეფონის ნომერი.");
+      return;
+    }
+    if (!smsText.trim()) {
+      toast.error("შეიყვანეთ შეტყობინების ტექსტი.");
+      return;
+    }
+    setSmsSending(true);
+    try {
+      const res = await fetch("/api/sms/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: phones, text: smsText.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message || data.error || "SMS გაგზავნა ვერ მოხერხდა");
+        return;
+      }
+      if (data.failCount > 0) {
+        toast.warning(`გაიგზავნა: ${data.successCount}, ვერ გაიგზავნა: ${data.failCount}`);
+      } else {
+        toast.success(`SMS წარმატებით გაიგზავნა ${data.successCount} მომხმარებელზე.`);
+        setSmsModalOpen(false);
+        setSmsText("");
+        setSelectedItems(new Set());
+      }
+    } catch {
+      toast.error("SMS გაგზავნა ვერ მოხერხდა");
+    } finally {
+      setSmsSending(false);
     }
   };
 
@@ -200,27 +253,48 @@ export default function InventoryList({ items, onEdit, onDelete, onStatusChange,
       </div>
     </div>
   );
-console.log("items", items[1]);
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden w-full max-w-full">
       {/* Bulk Actions */}
-      {selectedItems.size > 0 && onBulkStatusChange && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between">
+      {selectedItems.size > 0 && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <div className="text-[15px] font-medium text-gray-700">
             {selectedItems.size} ამანათი მონიშნულია
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION")}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              defaultValue=""
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleOpenSmsModal}
+              className="flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-[15px]"
             >
-              <option value="" disabled>სტატუსის შეცვლა</option>
-              <option value="STOPPED">გაჩერებული</option>
-              <option value="IN_WAREHOUSE">საწყობშია</option>
-              <option value="RELEASED">გაცემულია</option>
-              <option value="REGION">რეგიონი</option>
-            </select>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              SMS გაგზავნა
+            </button>
+            {onBulkStatusChange && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleBulkStatusChange("IN_WAREHOUSE")}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-[15px]"
+                >
+                  საწყობში
+                </button>
+                <select
+                  onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION")}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  defaultValue=""
+                >
+                  <option value="" disabled>სტატუსის შეცვლა</option>
+                  <option value="STOPPED">გაჩერებული</option>
+                  <option value="IN_WAREHOUSE">საწყობშია</option>
+                  <option value="RELEASED">გაცემულია</option>
+                  <option value="REGION">რეგიონი</option>
+                </select>
+              </>
+            )}
             <button
               onClick={() => setSelectedItems(new Set())}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 text-[15px]"
@@ -230,6 +304,43 @@ console.log("items", items[1]);
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={smsModalOpen}
+        onClose={() => !smsSending && setSmsModalOpen(false)}
+        title="SMS გაგზავნა მონიშნულ მომხმარებლებზე"
+      >
+        <div className="space-y-4">
+          <p className="text-[15px] text-gray-600">
+            ტექსტი გაიგზავნება {itemsForSelection.filter((i) => selectedItems.has(i.id)).filter((i) => (i.telefoni ?? "").toString().trim()).length} მომხმარებელზე.
+          </p>
+          <textarea
+            value={smsText}
+            onChange={(e) => setSmsText(e.target.value)}
+            placeholder="შეიყვანეთ შეტყობინების ტექსტი..."
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={smsSending}
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => !smsSending && setSmsModalOpen(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+            >
+              გაუქმება
+            </button>
+            <button
+              type="button"
+              onClick={handleSendBulkSms}
+              disabled={smsSending}
+              className="px-4 py-2 bg-green-700 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {smsSending ? "იგზავნება..." : "გაგზავნა"}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Mobile Card View */}
       <div className="lg:hidden p-4">
@@ -246,7 +357,7 @@ console.log("items", items[1]);
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider w-12">
                     <input
                       type="checkbox"
-                      checked={selectedItems.size === items.length && items.length > 0}
+                      checked={selectedItems.size === itemsForSelection.length && itemsForSelection.length > 0}
                       onChange={toggleSelectAll}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
