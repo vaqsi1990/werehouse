@@ -64,7 +64,10 @@ export async function PUT(
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
         const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
-    
+        await sendSmsViaMsgGe({
+          to: String(item.telefoni).trim(),
+          text,
+        });
         smsSent = true;
         await prisma.item.update({
           where: { id: item.id },

@@ -99,7 +99,10 @@ export async function POST(request: Request) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
         const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
-    
+        await sendSmsViaMsgGe({
+          to: toPhone,
+          text,
+        });
         successIds.push(item.id);
       } catch (e: unknown) {
         failures.push({

@@ -54,7 +54,7 @@ export function normalizePhoneToMsgGe(toRaw: string): string | null {
   return normalized ? `+${normalized}` : null;
 }
 
-export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, regionName?: string) {
+export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, regionName?: string): string {
   const code = shtrikhkodi || "ამანათი";
 
   if (status === "IN_WAREHOUSE") {
@@ -82,7 +82,9 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
     );
   }
 
-
+  // REGION ან ნებისმიერი სხვა სტატუსისთვის – ტექსტს არ ვაგენერირებთ,
+  // რომ REGION შემთხვევაში შემთხვევითაც არ გაიგზავნოს SMS.
+  return "";
 }
 
 export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {
