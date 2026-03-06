@@ -384,6 +384,9 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                     თარიღი
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
+                    საქ.გადახდა
+                  </th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
                     საქ. გაცვლა
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
@@ -438,6 +441,11 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                       </div>
                       <div className="text-[13px] text-gray-500 mt-1">
                         {item.tarighi}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-[15px] text-black break-all">
+                        {item.sakGadakhda}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4">
