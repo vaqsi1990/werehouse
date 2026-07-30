@@ -79,13 +79,13 @@ export async function POST(request: Request) {
     console.log(`Successfully created ${createdItems.length} items`);
 
     // Auto-send SMS for each imported item – თანმიმდევრულად, რომ ყოველი ნივთის ტელეფონზე მივიდეს მხოლოდ მისი SMS.
-    // REGION-ზე SMS არ იგზავნება
     const smsCandidates = createdItems.filter((it) => {
       const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
       const canNotifyStatus =
         (it.status === "IN_WAREHOUSE" ||
           it.status === "STOPPED" ||
-          it.status === "RELEASED") &&
+          it.status === "RELEASED" ||
+          it.status === "REGION") &&
         !it.smsSent &&
         hasPhone;
       return canNotifyStatus;

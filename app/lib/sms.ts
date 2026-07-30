@@ -72,7 +72,7 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
 
   if (status === "IN_WAREHOUSE") {
     return (
-      `მოგესალმებით, კომპანია Express Logistic Service გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსულია ამანათი კოდით ${code}. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსულია ამანათი კოდით ${code}. ` +
       `გთხოვთ, ამანათის გასატანათ მობრძანდეთ ჩვენს ოფისში. ` +
       `მისამართი: ქ.თბილისი, გაგარინის 4-4ა, სამუშაო საათები: ყოველ დღე, კვირის გარდა 11 საათიდან 19 საათამდე. ` +
       `საკურიერო მომსახურების ან სხვა კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
@@ -82,7 +82,7 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
 
   if (status === "STOPPED") {
     return (
-      `მოგესალმებით, კომპანია Express Logistic Service გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} შეჩერდა საბაჟოზე. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} შეჩერდა საბაჟოზე. ` +
       `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
     );
@@ -90,7 +90,16 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
 
   if (status === "RELEASED") {
     return (
-      `მოგესალმებით, კომპანია Express Logistic Service გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გატანილია. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გატანილია. ` +
+      `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
+    );
+  }
+
+  if (status === "REGION") {
+    return (
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გამოგეგზავნებათ რეგიონში. ` +
+      `ამანათს მისამართზე მიიღებთ 2-3 სამუშაო დღეში. ` +
+      `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
     );
   }
@@ -107,8 +116,11 @@ type GosmsApiError = {
   message?: string;
 };
 
-type GosmsSendResponse = GosmsApiError & {
+type GosmsApiResponse = GosmsApiError & {
   success?: boolean;
+};
+
+type GosmsSendResponse = GosmsApiResponse & {
   messageId?: number;
   message_id?: number;
   balance?: number;
@@ -117,8 +129,7 @@ type GosmsSendResponse = GosmsApiError & {
   text?: string;
 };
 
-type GosmsCheckResponse = GosmsApiError & {
-  success?: boolean;
+type GosmsCheckResponse = GosmsApiResponse & {
   status?: string;
   messageId?: number;
   to?: string;
@@ -160,7 +171,7 @@ function getGosmsErrorMessage(data: GosmsApiError, fallback: string) {
   return data.message ?? fallback;
 }
 
-function assertGosmsSuccess<T extends GosmsApiError>(
+function assertGosmsSuccess<T extends GosmsApiResponse>(
   res: Response,
   raw: string,
   data: T,
@@ -275,7 +286,7 @@ export async function checkSmsBalance(): Promise<{ balance: number; raw: string 
 
   const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
   const raw = (await res.text()).trim();
-  const data = (parseProviderResponse(raw) ?? {}) as GosmsApiError & { success?: boolean; balance?: number };
+  const data = (parseProviderResponse(raw) ?? {}) as GosmsApiResponse & { balance?: number };
 
   assertGosmsSuccess(res, raw, data, "SMS balance check failed");
 
