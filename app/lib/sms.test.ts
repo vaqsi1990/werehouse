@@ -4,10 +4,10 @@
  */
 
 import {
-  normalizePhoneToMsgGe,
+  normalizePhone,
   buildStatusSmsText,
   buildWarehouseArrivalSmsText,
-  sendSmsViaMsgGe,
+  sendSms,
   checkSmsDeliveryStatus,
   SmsProviderError,
   type SmsItemStatus,
@@ -17,8 +17,8 @@ function log(label: string, data: unknown) {
   console.log(`\n[TEST] ${label}`, typeof data === "object" ? JSON.stringify(data, null, 2) : data);
 }
 
-// --- normalizePhoneToMsgGe
-console.log("\n=== normalizePhoneToMsgGe ===");
+// --- normalizePhone
+console.log("\n=== normalizePhone ===");
 const phones = [
   "591357357",
   "0591357357",
@@ -28,7 +28,7 @@ const phones = [
   "",
 ];
 for (const p of phones) {
-  const out = normalizePhoneToMsgGe(p);
+  const out = normalizePhone(p);
   log(`normalize("${p}")`, out);
 }
 
@@ -50,8 +50,8 @@ const sendReal = process.env.SEND_REAL_SMS === "1";
 const toPhone = process.env.TO_PHONE?.trim();
 
 if (sendReal && toPhone) {
-  console.log("\n=== sendSmsViaMsgGe (real) ===");
-  sendSmsViaMsgGe({
+  console.log("\n=== sendSms (real) ===");
+  sendSms({
     to: toPhone,
     text: "Test SMS from werehouse – " + new Date().toISOString(),
   })

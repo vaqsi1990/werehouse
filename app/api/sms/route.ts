@@ -9,8 +9,8 @@ const sendSmsSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    // Optional protection: if SMS_API_KEY is set, require it via header.
-    const requiredKey = process.env.SMS_API_KEY;
+    // Optional protection: if SMS_INTERNAL_API_KEY is set, require it via header.
+    const requiredKey = process.env.SMS_INTERNAL_API_KEY;
     if (requiredKey) {
       const providedKey = request.headers.get("x-sms-api-key");
       if (!providedKey || providedKey !== requiredKey) {

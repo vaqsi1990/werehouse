@@ -39,12 +39,10 @@ npm install
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
 APP_PASSWORD="your_password_here"
-SMSUSERNAME="your_sms_username"
-SMSPASSWORD="your_sms_password"
-SMSCLIENTID="your_sms_client_id"
-SMSSERVICEID="your_sms_service_id"
+SMS_API_KEY="your_gosms_api_key"
+SMS_SENDER="YourApprovedSenderName"
 # Optional (recommended): protect /api/sms with a header key
-SMS_API_KEY="your_internal_api_key"
+SMS_INTERNAL_API_KEY="your_internal_api_key"
 ```
 
 **შენიშვნა:** `APP_PASSWORD` არის პაროლი, რომელიც საჭიროა სისტემაში შესასვლელად. თუ არ არის დაყენებული, გამოიყენება default პაროლი `admin123`. რეკომენდებულია პროდუქციაში გამოიყენოთ ძლიერი პაროლი.
@@ -200,11 +198,11 @@ Word ფაილში მონაცემები უნდა იყოს
 ნივთის წაშლა
 
 ### POST /api/sms
-SMS გაგზავნა (msg.ge HTTP API)
+SMS გაგზავნა (GOSMS.GE API)
 
 **Headers (optional):**
-- თუ `.env`-ში გაქვთ `SMS_API_KEY`, მაშინ request-ში აუცილებელია:
-  - `x-sms-api-key: <SMS_API_KEY>`
+- თუ `.env`-ში გაქვთ `SMS_INTERNAL_API_KEY`, მაშინ request-ში აუცილებელია:
+  - `x-sms-api-key: <SMS_INTERNAL_API_KEY>`
 
 **Request Body:**
 ```json
@@ -216,7 +214,6 @@ SMS გაგზავნა (msg.ge HTTP API)
 
 **Response:**
 - აბრუნებს `{ success: true, providerResponse: "..." }`
-- Unicode ტექსტისთვის ავტომატურად იგზავნება `utf=1`
 
 ## პროექტის სტრუქტურა
 

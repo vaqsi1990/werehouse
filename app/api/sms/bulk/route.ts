@@ -9,7 +9,7 @@ const sendBulkSmsSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const requiredKey = process.env.SMS_API_KEY;
+    const requiredKey = process.env.SMS_INTERNAL_API_KEY;
     if (requiredKey) {
       const providedKey = request.headers.get("x-sms-api-key");
       if (!providedKey || providedKey !== requiredKey) {

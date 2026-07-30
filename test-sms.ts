@@ -1,5 +1,5 @@
 // Test script for SMS functionality
-import { sendSmsViaMsgGe } from './app/lib/sms';
+import { sendSms } from './app/lib/sms';
 
 async function testSMS() {
 
@@ -14,7 +14,7 @@ async function testSMS() {
  
   
   try {
-    const result = await sendSmsViaMsgGe({
+    const result = await sendSms({
       to: testPhone,
       text: testText,
     });

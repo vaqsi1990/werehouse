@@ -1,8 +1,6 @@
 /**
- * MS Group API 1.0 – sendsms.php & track.php
- * https://bi.msg.ge – Send SMS and check delivery status via HTTP GET.
- * Georgian/Unicode: use utf=1 (7bit 160 chars, unicode 70 chars).
- * Shared/cloud hosting: set MSG_HEADER with alternate password from your manager.
+ * GOSMS.GE API 3.0 – https://api.gosms.ge/api
+ * Send SMS and check delivery status via JSON POST/GET.
  */
 
 type SendSmsInput = {
@@ -11,6 +9,25 @@ type SendSmsInput = {
 };
 
 export type SmsItemStatus = "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+
+const GOSMS_API_BASE = "https://api.gosms.ge/api";
+
+const GOSMS_ERROR_MESSAGES: Record<number, string> = {
+  100: "Invalid API key",
+  101: "Invalid sender name",
+  102: "Insufficient balance",
+  103: "Invalid parameters or message too long",
+  104: "Message not found",
+  105: "Invalid phone number",
+  106: "Failed to generate/send OTP",
+  107: "Sender already exists",
+  108: "Cannot create sender / API not configured",
+  109: "Too many OTP requests",
+  110: "Account locked",
+  111: "OTP expired",
+  112: "OTP already used",
+  113: "Invalid noSmsNumber",
+};
 
 export class SmsProviderError extends Error {
   status: number;
@@ -24,34 +41,30 @@ export class SmsProviderError extends Error {
   }
 }
 
-export function normalizePhoneToMsgGe(toRaw: string): string | null {
-
-  // and return international format with + sign for provider: +995XXXXXXXXX
+/** Normalize phone to GOSMS format: 995XXXXXXXXX (no + prefix). */
+export function normalizePhone(toRaw: string): string | null {
   const digits = String(toRaw || "").replace(/\D/g, "");
   if (!digits) return null;
 
   let normalized: string | null = null;
 
-  // If already international (Georgia) - starts with 995
   if (digits.startsWith("995") && digits.length >= 11 && digits.length <= 15) {
     normalized = digits;
-  }
-  // Common Georgian mobile: 9 digits starting with 5 (e.g. 591357357)
-  else if (digits.length === 9 && digits.startsWith("5")) {
+  } else if (digits.length === 9 && digits.startsWith("5")) {
     normalized = `995${digits}`;
-  }
-  // Some users type leading 0 (e.g. 0591357357)
-  else if (digits.length === 10 && digits.startsWith("0") && digits[1] === "5") {
+  } else if (digits.length === 10 && digits.startsWith("0") && digits[1] === "5") {
     normalized = `995${digits.slice(1)}`;
-  }
-  // Fallback: accept generic international digits length 6..15
-  else if (digits.length >= 6 && digits.length <= 15) {
+  } else if (digits.length >= 6 && digits.length <= 15) {
     normalized = digits;
   }
 
-  // Add + sign prefix as required by msg.ge API (format: +995XXXXXXXXX)
-  // msg.ge API requires phone numbers in format: +995XXXXXXXXX
-  return normalized ? `+${normalized}` : null;
+  return normalized;
+}
+
+/** @deprecated Use normalizePhone – kept for existing tests/imports. */
+export function normalizePhoneToMsgGe(toRaw: string): string | null {
+  const phone = normalizePhone(toRaw);
+  return phone ? `+${phone}` : null;
 }
 
 export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, regionName?: string): string {
@@ -82,8 +95,6 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
     );
   }
 
-  // REGION ან ნებისმიერი სხვა სტატუსისთვის – ტექსტს არ ვაგენერირებთ,
-  // რომ REGION შემთხვევაში შემთხვევითაც არ გაიგზავნოს SMS.
   return "";
 }
 
@@ -91,214 +102,182 @@ export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {
   return buildStatusSmsText("IN_WAREHOUSE", shtrikhkodi);
 }
 
-function needsUnicode(text: string) {
-  for (let i = 0; i < text.length; i++) {
-    if (text.charCodeAt(i) > 127) return true;
+type GosmsApiError = {
+  errorCode?: number;
+  message?: string;
+};
+
+type GosmsSendResponse = GosmsApiError & {
+  success?: boolean;
+  messageId?: number;
+  message_id?: number;
+  balance?: number;
+  to?: string;
+  from?: string;
+  text?: string;
+};
+
+type GosmsCheckResponse = GosmsApiError & {
+  success?: boolean;
+  status?: string;
+  messageId?: number;
+  to?: string;
+  from?: string;
+  text?: string;
+};
+
+function getSmsConfig() {
+  const apiKey = process.env.SMS_API_KEY?.trim();
+  const sender = process.env.SMS_SENDER?.trim();
+
+  if (!apiKey) {
+    throw new Error("SMS credentials are not configured (SMS_API_KEY)");
   }
-  return false;
+  if (!sender) {
+    throw new Error("SMS sender is not configured (SMS_SENDER)");
+  }
+
+  return { apiKey, sender };
 }
 
-export async function sendSmsViaMsgGe(input: SendSmsInput) {
-  const username = 'expresslogiticservice';
-  const password = 'Nn8I4IgS3y';
-  const clientId = '1156';
-  const serviceId = '3150';
-  const outboundHeader = 'xL6nn@6fsMc';
+function maskPhone(phone: string) {
+  return `${phone.slice(0, 5)}****${phone.slice(-2)}`;
+}
 
-  if (!username || !password || !clientId || !serviceId) {
-    throw new Error("SMS credentials are not configured (SMSUSERNAME/SMSPASSWORD/SMSCLIENTID/SMSSERVICEID)");
+function parseProviderResponse(raw: string): unknown {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
   }
+}
 
-  const to = normalizePhoneToMsgGe(input.to);
+function getGosmsErrorMessage(data: GosmsApiError, fallback: string) {
+  if (typeof data.errorCode === "number") {
+    return GOSMS_ERROR_MESSAGES[data.errorCode] ?? data.message ?? `${fallback} (code: ${data.errorCode})`;
+  }
+  return data.message ?? fallback;
+}
+
+function assertGosmsSuccess<T extends GosmsApiError>(
+  res: Response,
+  raw: string,
+  data: T,
+  fallbackError: string
+) {
+  if (!res.ok || data.success === false || typeof data.errorCode === "number") {
+    const message = getGosmsErrorMessage(data, fallbackError);
+    console.error("[SMS] Provider error response", {
+      httpStatus: res.status,
+      message,
+      body: data,
+    });
+    throw new SmsProviderError(message, {
+      status: res.status,
+      providerResponse: raw,
+    });
+  }
+}
+
+export async function sendSms(input: SendSmsInput) {
+  const { apiKey, sender } = getSmsConfig();
+  const to = normalizePhone(input.to);
   if (!to) throw new Error("Invalid phone number");
 
-  console.log("[SMS] Sending via msg.ge", {
-    toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
+  console.log("[SMS] Sending via gosms.ge", {
+    toMasked: maskPhone(to),
     hasText: Boolean(input.text),
+    sender,
   });
 
-  const url = new URL("https://bi.msg.ge/sendsms.php");
-  const params = new URLSearchParams({
-    username,
-    password,
-    client_id: clientId,
-    service_id: serviceId,
-    to,
-    text: input.text,
-  });
-  if (needsUnicode(input.text)) params.set("utf", "1");
-  url.search = params.toString();
-
-  const safeUrl = url.toString().replace(/password=[^&]*/i, "password=***");
-  console.log("[SMS] Request URL", safeUrl);
-
-  const headers: Record<string, string> = {};
-  if (outboundHeader) {
-    // Shared hosting / cloud: alternate password in MSG_HEADER (per MS Group API docs).
-    headers["MSG_HEADER"] = outboundHeader;
-  }
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
+  const res = await fetch(`${GOSMS_API_BASE}/sendsms`, {
+    method: "POST",
     cache: "no-store",
-    headers,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: apiKey,
+      from: sender,
+      to,
+      text: input.text,
+    }),
   });
-  const providerResponse = (await res.text()).trim();
 
-  console.log("[SMS] Provider response", { httpStatus: res.status, body: providerResponse });
+  const raw = (await res.text()).trim();
+  const data = (parseProviderResponse(raw) ?? {}) as GosmsSendResponse;
 
- 
-  if (!providerResponse || providerResponse.length === 0) {
-    console.error("[SMS] Empty provider response", {
-      toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
-      status: res.status,
-    });
+  console.log("[SMS] Provider response", { httpStatus: res.status, body: data });
+
+  if (!raw) {
     throw new SmsProviderError("SMS provider returned empty response", {
       status: res.status,
       providerResponse: "",
     });
   }
 
-  // Response format: "CODE-MESSAGE_ID" (e.g. 0000-000001)
-  const [responseCode, messageIdRaw] = providerResponse.includes("-")
-    ? providerResponse.split("-", 2)
-    : [providerResponse.substring(0, 4), ""];
+  assertGosmsSuccess(res, raw, data, "SMS provider error");
 
-  if (!res.ok) {
-    console.error("[SMS] Provider HTTP error", {
-      toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
-      status: res.status,
-      providerResponse,
-    });
-    throw new SmsProviderError(`SMS provider request failed (HTTP ${res.status})`, {
-      status: res.status,
-      providerResponse,
-    });
-  }
-
-  // Check response code even if HTTP status is 200
-  if (responseCode !== "0000") {
-    let errorMessage = `SMS provider error (code: ${responseCode})`;
-    switch (responseCode) {
-      case "0001":
-        errorMessage = "Invalid password or nickname or restricted IP address";
-        break;
-      case "0003":
-        errorMessage = "Required fields are empty (username, password, client_id, service_id)";
-        break;
-      case "0005":
-        errorMessage = "Blank message body";
-        break;
-      case "0007":
-        errorMessage = "Invalid phone number";
-        break;
-      case "0008":
-        errorMessage = "Insufficient balance";
-        break;
-      case "0009":
-        errorMessage = "Invalid sender ID";
-        break;
-      case "0010":
-        errorMessage = "The message contains banned word";
-        break;
-      default:
-        errorMessage = `SMS provider error (code: ${responseCode})`;
-    }
-    
-    console.error("[SMS] Provider error response", {
-      toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
-      responseCode,
-      providerResponse,
-      errorMessage,
-    });
-    
-    throw new SmsProviderError(errorMessage, {
-      status: res.status,
-      providerResponse,
-    });
-  }
-
-  const messageId = messageIdRaw?.trim() || "";
+  const messageId = String(data.messageId ?? data.message_id ?? "");
 
   console.log("[SMS] Successfully sent", {
-    toMasked: `${to.slice(0, 3)}****${to.slice(-2)}`,
-    providerResponse,
+    toMasked: maskPhone(to),
     messageId: messageId || undefined,
+    balance: data.balance,
   });
 
-  return { providerResponse, messageId };
+  return { providerResponse: raw, messageId };
 }
 
-/** track.php delivery status codes (MS Group API 1.0) */
-export type SmsDeliveryStatus =
-  | 0   // Pending
-  | 1   // Was sent to a subscriber
-  | 2   // Failed to send to a subscriber
-  | 4   // Status pending
-  | 8   // Submitted to the SMS Center
-  | 16  // Rejected by SMS Center
-  | 64; // Incorrect password or nickname or restricted IP address
+/** @deprecated Use sendSms – kept for existing imports. */
+export async function sendSmsViaMsgGe(input: SendSmsInput) {
+  return sendSms(input);
+}
 
-const DELIVERY_STATUS_LABELS: Record<number, string> = {
-  0: "Pending",
-  1: "Was sent to a subscriber",
-  2: "Failed to send to a subscriber",
-  4: "Status pending",
-  8: "Submitted to the SMS Center",
-  16: "Rejected by SMS Center",
-  64: "Incorrect password or nickname or restricted IP address",
-};
-
-/**
- * Check SMS delivery status (track.php).
- * Requires: message_id (from send response), username, password, client_id.
- */
 export async function checkSmsDeliveryStatus(messageId: string): Promise<{
-  status: SmsDeliveryStatus;
+  status: string;
   statusLabel: string;
   raw: string;
 }> {
-  const username = process.env.SMSUSERNAME ?? "expresslogiticservice";
-  const password = process.env.SMSPASSWORD ?? "Nn8I4IgS3y";
-  const clientId = process.env.SMSCLIENTID ?? "1156";
-  const outboundHeader = process.env.SMS_MSG_HEADER ?? "xL6nn@6fsMc";
-
-  if (!username || !password || !clientId) {
-    throw new Error("SMS credentials not configured for track (username, password, client_id)");
+  const { apiKey } = getSmsConfig();
+  const parsedMessageId = Number(messageId);
+  if (!messageId || Number.isNaN(parsedMessageId)) {
+    throw new Error("Invalid messageId for SMS status check");
   }
 
-  const url = new URL("https://bi.msg.ge/track.php");
+  const url = new URL(`${GOSMS_API_BASE}/checksms`);
   url.search = new URLSearchParams({
-    message_id: String(messageId),
-    username,
-    password,
-    client_id: clientId,
+    api_key: apiKey,
+    messageId: String(parsedMessageId),
   }).toString();
-  const trackUrl = url.toString();
 
-  console.log("[SMS] Track request", { messageId, trackUrl: trackUrl.replace(/password=[^&]*/i, "password=***") });
+  console.log("[SMS] Track request", { messageId });
 
-  const headers: Record<string, string> = {};
-  if (outboundHeader) headers["MSG_HEADER"] = outboundHeader;
-
-  const res = await fetch(trackUrl, { method: "GET", cache: "no-store", headers });
+  const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
   const raw = (await res.text()).trim();
+  const data = (parseProviderResponse(raw) ?? {}) as GosmsCheckResponse;
 
-  console.log("[SMS] Track response", { httpStatus: res.status, raw });
+  console.log("[SMS] Track response", { httpStatus: res.status, body: data });
 
-  const code = parseInt(raw, 10);
+  assertGosmsSuccess(res, raw, data, "SMS status check failed");
 
-  if (!res.ok) {
-    throw new SmsProviderError(`Track request failed (HTTP ${res.status})`, {
-      status: res.status,
-      providerResponse: raw,
-    });
-  }
-
-  const status = isNaN(code) ? 0 : (code as SmsDeliveryStatus);
-  const statusLabel = DELIVERY_STATUS_LABELS[status] ?? `Unknown (${raw})`;
+  const status = data.status ?? "unknown";
+  const statusLabel = status;
 
   console.log("[SMS] Delivery status", { messageId, status, statusLabel });
   return { status, statusLabel, raw };
 }
 
+export async function checkSmsBalance(): Promise<{ balance: number; raw: string }> {
+  const { apiKey } = getSmsConfig();
+
+  const url = new URL(`${GOSMS_API_BASE}/sms-balance`);
+  url.search = new URLSearchParams({ api_key: apiKey }).toString();
+
+  const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+  const raw = (await res.text()).trim();
+  const data = (parseProviderResponse(raw) ?? {}) as GosmsApiError & { success?: boolean; balance?: number };
+
+  assertGosmsSuccess(res, raw, data, "SMS balance check failed");
+
+  return { balance: data.balance ?? 0, raw };
+}

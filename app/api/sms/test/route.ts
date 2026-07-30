@@ -3,8 +3,8 @@ import { sendSmsViaMsgGe } from "@/app/lib/sms";
 
 export async function GET(request: Request) {
   try {
-    // Optional simple protection with the same SMS_API_KEY as main /api/sms
-    const requiredKey = process.env.SMS_API_KEY;
+    // Optional simple protection with the same SMS_INTERNAL_API_KEY as main /api/sms
+    const requiredKey = process.env.SMS_INTERNAL_API_KEY;
     if (requiredKey) {
       const providedKey = request.headers.get("x-sms-api-key");
       if (!providedKey || providedKey !== requiredKey) {
