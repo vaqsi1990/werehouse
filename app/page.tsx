@@ -10,6 +10,12 @@ import AddProductForm from "./components/AddProductForm";
 import EditItemForm from "./components/EditItemForm";
 import Modal from "./components/Modal";
 import LoginForm from "./components/LoginForm";
+import CountrySelect, { type Country } from "./components/CountrySelect";
+
+function isCountryAuthenticated(country: Country) {
+  if (localStorage.getItem(`authenticated-${country}`) === "true") return true;
+  return country === "FRANCE" && localStorage.getItem("authenticated") === "true";
+}
 import type { ItemFormData } from "./lib/validations";
 
 interface Item {
@@ -29,6 +35,8 @@ interface Item {
 }
 
 export default function Home() {
+  const [country, setCountry] = useState<Country | null>(null);
+  const [checkingCountry, setCheckingCountry] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [activeSection, setActiveSection] = useState("in-warehouse");
@@ -42,14 +50,30 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Check authentication on mount
+  // Check authentication and saved country on mount
   useEffect(() => {
-    const authStatus = localStorage.getItem("authenticated");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
+    const savedCountry = localStorage.getItem("country");
+    if (savedCountry === "FRANCE" || savedCountry === "RUSSIA") {
+      setCountry(savedCountry);
+      setIsAuthenticated(isCountryAuthenticated(savedCountry));
     }
+    setCheckingCountry(false);
     setCheckingAuth(false);
   }, []);
+
+  const handleSelectCountry = (next: Country) => {
+    localStorage.setItem("country", next);
+    setCountry(next);
+    setIsAuthenticated(isCountryAuthenticated(next));
+  };
+
+  const handleChangeCountry = () => {
+    localStorage.removeItem("country");
+    setCountry(null);
+    setItems([]);
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -66,12 +90,14 @@ export default function Home() {
     return mapping[section] || null;
   };
 
-  // Fetch items from API
+  // Fetch items from API for the selected country
   useEffect(() => {
+    if (!country) return;
+
     const fetchItems = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/items");
+        const response = await fetch(`/api/items?country=${country}`);
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched items:", data);
@@ -88,7 +114,7 @@ export default function Home() {
     };
 
     fetchItems();
-  }, []);
+  }, [country]);
 
   const handleAddProduct = async (newProduct: ItemFormData) => {
     try {
@@ -98,7 +124,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newProduct),
+        body: JSON.stringify({ ...newProduct, country }),
       });
 
       if (response.ok) {
@@ -125,7 +151,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ items: products }),
+        body: JSON.stringify({ items: products, country }),
       });
 
       if (response.ok) {
@@ -407,8 +433,8 @@ export default function Home() {
     return titles[activeSection] || "ინვენტარი";
   };
 
-  // Show loading while checking authentication
-  if (checkingAuth) {
+  // Show loading while checking country and authentication
+  if (checkingCountry || checkingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -419,9 +445,13 @@ export default function Home() {
     );
   }
 
+  if (!country) {
+    return <CountrySelect onSelect={handleSelectCountry} />;
+  }
+
   // Show login form if not authenticated
   if (!isAuthenticated) {
-    return <LoginForm onLogin={handleLogin} />;
+    return <LoginForm country={country} onLogin={handleLogin} onBack={handleChangeCountry} />;
   }
 
   if (loading) {
@@ -444,7 +474,11 @@ export default function Home() {
         onClose={() => setIsSidebarOpen(false)}
       />
       <div className={`flex-1 w-full transition-all duration-300 ${isSidebarOpen ? "lg:ml-56" : "lg:ml-0"} overflow-hidden`}>
-        <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <Header
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          country={country}
+          onChangeCountry={handleChangeCountry}
+        />
         <main className="p-4 overflow-x-hidden">
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { itemSchema, type ItemFormData } from "../../../lib/validations";
-import { buildStatusSmsText, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
 import type { Item, Prisma } from "@/app/generated/prisma/client";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { items } = body;
+    const country = body.country === "RUSSIA" ? "RUSSIA" : "FRANCE";
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
             itemData.tarighi = null;
           }
           
+          itemData.country = country;
           const created = await tx.item.create({
             data: itemData,
           });
@@ -98,7 +100,12 @@ export async function POST(request: Request) {
       const toPhone = String(item.telefoni).trim();
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
-        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
+        const text = buildStatusSmsText(
+          item.status,
+          item.shtrikhkodi || "",
+          regionName,
+          parcelOriginFromCountry(item.country)
+        );
         await sendSmsViaMsgGe({
           to: toPhone,
           text,

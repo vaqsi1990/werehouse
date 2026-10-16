@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { buildStatusSmsText, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
 
 export async function DELETE(
   request: Request,
@@ -63,7 +63,12 @@ export async function PUT(
     if (canNotifyStatus) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
-        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
+        const text = buildStatusSmsText(
+          item.status,
+          item.shtrikhkodi || "",
+          regionName,
+          parcelOriginFromCountry(item.country)
+        );
         await sendSmsViaMsgGe({
           to: String(item.telefoni).trim(),
           text,

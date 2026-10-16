@@ -9,6 +9,11 @@ type SendSmsInput = {
 };
 
 export type SmsItemStatus = "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+export type ParcelOrigin = "FRANCE" | "RUSSIA";
+
+export function parcelOriginFromCountry(country?: string | null): ParcelOrigin {
+  return country === "RUSSIA" ? "RUSSIA" : "FRANCE";
+}
 
 const GOSMS_API_BASE = "https://api.gosms.ge/api";
 
@@ -67,12 +72,18 @@ export function normalizePhoneToMsgGe(toRaw: string): string | null {
   return phone ? `+${phone}` : null;
 }
 
-export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, regionName?: string): string {
+export function buildStatusSmsText(
+  status: SmsItemStatus,
+  shtrikhkodi: string,
+  regionName?: string,
+  origin: ParcelOrigin = "FRANCE"
+): string {
   const code = shtrikhkodi || "ამანათი";
+  const from = origin === "RUSSIA" ? "რუსეთიდან" : "საფრანგეთიდან";
 
   if (status === "IN_WAREHOUSE") {
     return (
-      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსულია ამანათი კოდით ${code}. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსულია ამანათი კოდით ${code}. ` +
       `გთხოვთ, ამანათის გასატანათ მობრძანდეთ ჩვენს ოფისში. ` +
       `მისამართი: ქ.თბილისი, გაგარინის 4-4ა, სამუშაო საათები: ყოველ დღე, კვირის გარდა 11 საათიდან 19 საათამდე. ` +
       `საკურიერო მომსახურების ან სხვა კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
@@ -82,7 +93,7 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
 
   if (status === "STOPPED") {
     return (
-      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} შეჩერდა საბაჟოზე. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} შეჩერდა საბაჟოზე. ` +
       `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
     );
@@ -90,14 +101,14 @@ export function buildStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, r
 
   if (status === "RELEASED") {
     return (
-      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გატანილია. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} გატანილია. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
     );
   }
 
   if (status === "REGION") {
     return (
-      `Postifly გაცნობებთ, რომ თქვენს სახელზე საფრანგეთიდან ჩამოსული ამანათი კოდით ${code} გამოგეგზავნებათ რეგიონში. ` +
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} გამოგეგზავნებათ რეგიონში. ` +
       `ამანათს მისამართზე მიიღებთ 2-3 სამუშაო დღეში. ` +
       `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`

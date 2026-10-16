@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
-import { buildStatusSmsText, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const country = searchParams.get("country") === "RUSSIA" ? "RUSSIA" : "FRANCE";
     const items = await prisma.item.findMany({
+      where: { country },
       orderBy: {
         createdAt: "desc",
       },
@@ -39,6 +42,9 @@ export async function POST(request: Request) {
       itemData.tarighi = null;
     }
     
+    const country = body.country === "RUSSIA" ? "RUSSIA" : "FRANCE";
+    itemData.country = country;
+
     const item = await prisma.item.create({
       data: itemData,
     });
@@ -59,7 +65,12 @@ export async function POST(request: Request) {
     if (canNotifyStatus) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
-        const text = buildStatusSmsText(item.status, item.shtrikhkodi || "", regionName);
+        const text = buildStatusSmsText(
+          item.status,
+          item.shtrikhkodi || "",
+          regionName,
+          parcelOriginFromCountry(item.country)
+        );
         await sendSmsViaMsgGe({
           to: String(item.telefoni).trim(),
           text,

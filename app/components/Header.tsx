@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   onMenuClick: () => void;
+  country?: "FRANCE" | "RUSSIA";
+  onChangeCountry?: () => void;
 }
 
-export default function Header({ onMenuClick }: HeaderProps) {
+export default function Header({ onMenuClick, country, onChangeCountry }: HeaderProps) {
   const router = useRouter();
 
   const handleLogout = () => {
     if (window.confirm("დარწმუნებული ხართ რომ გსურთ გასვლა?")) {
-      localStorage.removeItem("authenticated");
+      localStorage.removeItem(`authenticated-${country ?? "FRANCE"}`);
+      if (country !== "RUSSIA") {
+        localStorage.removeItem("authenticated");
+      }
       router.refresh();
       window.location.reload();
     }
@@ -46,6 +51,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800">დეშბორდი</h2>
           </div>
           <div className="flex items-center gap-2 lg:gap-4">
+            {onChangeCountry && (
+              <button
+                onClick={onChangeCountry}
+                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                title="ქვეყნის შეცვლა"
+              >
+                <span className="hidden sm:inline">
+                  {country === "RUSSIA" ? "რუსეთი" : "საფრანგეთი"}
+                </span>
+                <span className="sm:hidden">{country === "RUSSIA" ? "RU" : "FR"}</span>
+              </button>
+            )}
             <button 
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"

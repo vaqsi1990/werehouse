@@ -25,8 +25,14 @@ model Item {
   tarighi       String?    // თარიღი (DD/MM/YYYY)
   status        ItemStatus // საქ. გაცვლა
   smsSent       Boolean    @default(false)
+  country       Country    @default(FRANCE)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+}
+
+enum Country {
+  FRANCE
+  RUSSIA
 }
 
 enum ItemStatus {

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
-// პაროლი შეიძლება იყოს environment variable-ში
-// თუ არ არის დაყენებული, გამოიყენება default პაროლი
-const APP_PASSWORD = process.env.APP_PASSWORD || "admin123";
+function expectedPassword(country: unknown) {
+  if (country === "RUSSIA") {
+    return process.env.Russian_password;
+  }
+  return process.env.APP_PASSWORD || "admin123";
+}
 
 export async function POST(request: Request) {
   try {
-    const { password } = await request.json();
+    const { password, country } = await request.json();
 
     if (!password) {
       return NextResponse.json(
@@ -15,7 +18,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password === APP_PASSWORD) {
+    const expected = expectedPassword(country);
+    if (!expected) {
+      return NextResponse.json(
+        { message: "პაროლი არ არის კონფიგურირებული" },
+        { status: 500 }
+      );
+    }
+
+    if (password === expected) {
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
