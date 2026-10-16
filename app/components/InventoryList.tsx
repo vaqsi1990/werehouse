@@ -29,9 +29,10 @@ interface InventoryListProps {
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
   onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
+  showEmptyMessage?: boolean;
 }
 
-export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange }: InventoryListProps) {
+export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange, showEmptyMessage = true }: InventoryListProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsText, setSmsText] = useState("");
@@ -148,6 +149,8 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
   };
 
   if (items.length === 0) {
+    if (!showEmptyMessage) return null;
+
     return (
       <div className="bg-white rounded-lg shadow-md p-12 text-center">
         <svg

@@ -691,6 +691,7 @@ export default function Home() {
               onDelete={handleDeleteProduct}
               onStatusChange={handleStatusChange}
               onBulkStatusChange={handleBulkStatusChange}
+              showEmptyMessage={country === "FRANCE"}
             />
             
             {/* Pagination Controls */}

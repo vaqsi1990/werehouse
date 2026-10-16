@@ -25,13 +25,13 @@ export default function Header({ onMenuClick, country, onChangeCountry }: Header
 
   return (
     <header className="bg-white shadow-md border-b border-gray-200">
-      <div className="px-4 lg:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Menu toggle button */}
             <button
               onClick={onMenuClick}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 shrink-0 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <svg
                 className="w-6 h-6"
@@ -47,14 +47,14 @@ export default function Header({ onMenuClick, country, onChangeCountry }: Header
                 />
               </svg>
             </button>
-            <Image src="/logo.jpg" alt="logo" className="w-10 h-10" width={100} height={100} />
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">დეშბორდი</h2>
+            <Image src="/logo.jpg" alt="logo" className="w-8 h-8 sm:w-10 sm:h-10 shrink-0" width={100} height={100} />
+            <h2 className="truncate text-base sm:text-xl lg:text-2xl font-bold text-gray-800">დეშბორდი</h2>
           </div>
-          <div className="flex items-center gap-2 lg:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 shrink-0">
             {onChangeCountry && (
               <button
                 onClick={onChangeCountry}
-                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                className="flex items-center gap-2 px-2 sm:px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
                 title="ქვეყნის შეცვლა"
               >
                 <span className="hidden sm:inline">
@@ -65,7 +65,7 @@ export default function Header({ onMenuClick, country, onChangeCountry }: Header
             )}
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+              className="flex items-center gap-2 px-2 sm:px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
               title="გასვლა"
             >
               <svg
@@ -83,7 +83,7 @@ export default function Header({ onMenuClick, country, onChangeCountry }: Header
               </svg>
               <span className="hidden sm:inline">გასვლა</span>
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center shrink-0">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                 ა
               </div>
