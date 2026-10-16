@@ -11,6 +11,7 @@ export default function StatsCard({ title, value, icon, color = "blue" }: StatsC
     green: "bg-green-100 text-green-600",
     yellow: "bg-yellow-100 text-yellow-600",
     purple: "bg-purple-100 text-purple-600",
+    orange: "bg-orange-100 text-orange-600",
   };
 
   return (

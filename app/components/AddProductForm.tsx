@@ -11,11 +11,12 @@ interface AddProductFormProps {
   onBulkAdd?: (products: ItemFormData[]) => void;
   onClose?: () => void;
   activeSection?: string;
+  country?: "FRANCE" | "RUSSIA";
 }
 
 type FormMode = "manual" | "file";
 
-export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSection }: AddProductFormProps) {
+export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSection, country }: AddProductFormProps) {
   const [mode, setMode] = useState<FormMode>("manual");
   const [formData, setFormData] = useState({
     shtrikhkodi: "",
@@ -47,7 +48,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
     e.preventDefault();
     
     // Determine status based on activeSection
-    const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
+    const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
     
     try {
       const validatedData = itemSchema.parse({
@@ -386,7 +387,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               // Check required fields (sakGadakhda is now optional, can be empty)
               if (shtrikhkodi && gamomcemeli && mimgebi && telefoni && tsona && kalaki) {
                 try {
-                  const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
+                  const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
                   const item = itemSchema.parse({
                     shtrikhkodi,
                     gamomcemeli,
@@ -557,7 +558,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               };
 
               if (data.shtrikhkodi && data.gamomcemeli && data.mimgebi && data.telefoni && data.tsona && data.kalaki && data.sakGadakhda) {
-                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : "IN_WAREHOUSE";
+                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
                 const item = itemSchema.parse({
                   ...data,
                   tarighi: convertDateToDDMMYYYY(data.tarighi),

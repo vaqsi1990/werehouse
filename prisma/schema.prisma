@@ -40,4 +40,5 @@ enum ItemStatus {
   IN_WAREHOUSE // საწყობშია
   RELEASED // გაცემულია
   REGION // რეგიონი
+  PENDING // მოლოდინში (მხოლოდ რუსეთი)
 }

@@ -14,7 +14,7 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
   createdAt: string;
   updatedAt: string;
 }
@@ -27,12 +27,15 @@ interface InventoryListProps {
   selectionScopeKey?: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
-  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => void;
+  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => void;
+  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => void;
   showEmptyMessage?: boolean;
+  country?: "FRANCE" | "RUSSIA";
 }
 
-export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange, showEmptyMessage = true }: InventoryListProps) {
+type ItemStatus = "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
+
+export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange, showEmptyMessage = true, country }: InventoryListProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsText, setSmsText] = useState("");
@@ -70,6 +73,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
     REGION: "რეგიონი",
+    PENDING: "მოლოდინში",
   };
 
   const statusColors: Record<string, string> = {
@@ -77,7 +81,16 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
     IN_WAREHOUSE: "bg-white text-black border-1 border-black",
     RELEASED: "bg-white text-black border-1 border-black",
     REGION: "bg-white text-black border-1 border-black",
+    PENDING: "bg-white text-black border-1 border-black",
   };
+
+  const statusOptions: { value: ItemStatus; label: string }[] = [
+    { value: "STOPPED", label: "გაჩერებული" },
+    { value: "IN_WAREHOUSE", label: "საწყობშია" },
+    { value: "RELEASED", label: "გაცემულია" },
+    { value: "REGION", label: "რეგიონი" },
+    ...(country === "RUSSIA" ? [{ value: "PENDING" as const, label: "მოლოდინში" }] : []),
+  ];
 
   const toggleItemSelection = (id: string) => {
     setSelectedItems((prev) => {
@@ -99,7 +112,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
     }
   };
 
-  const handleBulkStatusChange = (newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
+  const handleBulkStatusChange = (newStatus: ItemStatus) => {
     if (onBulkStatusChange && selectedItems.size > 0) {
       onBulkStatusChange(Array.from(selectedItems), newStatus);
       setSelectedItems(new Set());
@@ -221,15 +234,16 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             <select
               value={item.status}
               onChange={(e) => {
-                const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+                const newStatus = e.target.value as ItemStatus;
                 onStatusChange(item.id, newStatus);
               }}
               className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
             >
-              <option value="STOPPED">გაჩერებული</option>
-              <option value="IN_WAREHOUSE">საწყობშია</option>
-              <option value="RELEASED">გაცემულია</option>
-              <option value="REGION">რეგიონი</option>
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         )}
@@ -286,15 +300,16 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                   საწყობში
                 </button>
                 <select
-                  onChange={(e) => handleBulkStatusChange(e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION")}
+                  onChange={(e) => handleBulkStatusChange(e.target.value as ItemStatus)}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                   defaultValue=""
                 >
                   <option value="" disabled>სტატუსის შეცვლა</option>
-                  <option value="STOPPED">გაჩერებული</option>
-                  <option value="IN_WAREHOUSE">საწყობშია</option>
-                  <option value="RELEASED">გაცემულია</option>
-                  <option value="REGION">რეგიონი</option>
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </>
             )}
@@ -456,15 +471,16 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                         <select
                           value={item.status}
                           onChange={(e) => {
-                            const newStatus = e.target.value as "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+                            const newStatus = e.target.value as ItemStatus;
                             onStatusChange(item.id, newStatus);
                           }}
                           className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusColors[item.status]} w-full max-w-[140px]`}
                         >
-                          <option value="STOPPED">გაჩერებული</option>
-                          <option value="IN_WAREHOUSE">საწყობშია</option>
-                          <option value="RELEASED">გაცემულია</option>
-                          <option value="REGION">რეგიონი</option>
+                          {statusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                       ) : (
                         <span

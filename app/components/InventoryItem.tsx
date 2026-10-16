@@ -8,7 +8,7 @@ interface InventoryItemProps {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
   createdAt: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -34,6 +34,7 @@ export default function InventoryItem({
     IN_WAREHOUSE: "საწყობშია",
     RELEASED: "გაცემულია",
     REGION: "რეგიონი",
+    PENDING: "მოლოდინში",
   };
 
   // Format date in Georgian

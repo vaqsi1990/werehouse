@@ -33,7 +33,7 @@ export async function PUT(
     console.log("Updating item:", id, "with data:", body);
     
     // Validate status if provided
-    const validStatuses = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"];
+    const validStatuses = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION", "PENDING"];
     if (body.status && !validStatuses.includes(body.status)) {
       return NextResponse.json(
         { 
@@ -42,6 +42,19 @@ export async function PUT(
         },
         { status: 400 }
       );
+    }
+
+    if (body.status === "PENDING") {
+      const existing = await prisma.item.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ error: "Item not found" }, { status: 404 });
+      }
+      if (existing.country !== "RUSSIA") {
+        return NextResponse.json(
+          { error: "Invalid status", message: "მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა" },
+          { status: 400 }
+        );
+      }
     }
     
     const item = await prisma.item.update({
@@ -52,15 +65,14 @@ export async function PUT(
     });
     console.log("Item updated successfully:", item);
 
-    const canNotifyStatus =
+    let smsSent = item.smsSent;
+    if (
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
         item.status === "RELEASED" ||
         item.status === "REGION") &&
-      item.telefoni?.trim();
-
-    let smsSent = item.smsSent;
-    if (canNotifyStatus) {
+      item.telefoni?.trim()
+    ) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
         const text = buildStatusSmsText(

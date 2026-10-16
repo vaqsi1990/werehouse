@@ -7,10 +7,27 @@ interface SidebarProps {
   onSectionChange: (section: string) => void;
   isOpen: boolean;
   onClose: () => void;
+  country?: "FRANCE" | "RUSSIA";
 }
 
-export default function Sidebar({ activeSection, onSectionChange, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ activeSection, onSectionChange, isOpen, onClose, country }: SidebarProps) {
+  const pendingItem = {
+    id: "pending",
+    label: "მოლოდინში",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+  };
+
   const menuItems = [
+    ...(country === "RUSSIA" ? [pendingItem] : []),
     {
       id: "in-warehouse",
       label: "საწყობში",
@@ -146,11 +163,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onClos
           ))}
         </nav>
 
-        <div className="flex-shrink-0 p-4 border-t border-blue-800">
-          <p className="text-[16px] text-blue-300 text-center truncate">
-            საწყობის მართვა © 2024
-          </p>
-        </div>
+        
       </aside>
     </>
   );

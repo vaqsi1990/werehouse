@@ -25,8 +25,12 @@ export async function POST(request: Request) {
       try {
         const validatedItem = itemSchema.parse({
           ...items[i],
-          status: items[i].status || "IN_WAREHOUSE",
+          status: items[i].status || (country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE"),
         });
+        if (validatedItem.status === "PENDING" && country !== "RUSSIA") {
+          errors.push(`Row ${i + 1}: მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა`);
+          continue;
+        }
         validatedItems.push(validatedItem);
       } catch (error: unknown) {
         errors.push(
@@ -81,17 +85,23 @@ export async function POST(request: Request) {
     console.log(`Successfully created ${createdItems.length} items`);
 
     // Auto-send SMS for each imported item – თანმიმდევრულად, რომ ყოველი ნივთის ტელეფონზე მივიდეს მხოლოდ მისი SMS.
-    const smsCandidates = createdItems.filter((it) => {
-      const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
-      const canNotifyStatus =
-        (it.status === "IN_WAREHOUSE" ||
-          it.status === "STOPPED" ||
-          it.status === "RELEASED" ||
-          it.status === "REGION") &&
-        !it.smsSent &&
-        hasPhone;
-      return canNotifyStatus;
-    });
+    const smsCandidates = createdItems.filter(
+      (
+        it
+      ): it is Item & {
+        status: "IN_WAREHOUSE" | "STOPPED" | "RELEASED" | "REGION";
+      } => {
+        const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
+        return (
+          (it.status === "IN_WAREHOUSE" ||
+            it.status === "STOPPED" ||
+            it.status === "RELEASED" ||
+            it.status === "REGION") &&
+          !it.smsSent &&
+          hasPhone
+        );
+      }
+    );
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; to: string; message: string }> = [];

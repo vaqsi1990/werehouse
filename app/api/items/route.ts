@@ -44,6 +44,16 @@ export async function POST(request: Request) {
     
     const country = body.country === "RUSSIA" ? "RUSSIA" : "FRANCE";
     itemData.country = country;
+    if (!itemData.status) {
+      itemData.status = country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
+    }
+
+    if (itemData.status === "PENDING" && country !== "RUSSIA") {
+      return NextResponse.json(
+        { error: "Invalid status", message: "მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა" },
+        { status: 400 }
+      );
+    }
 
     const item = await prisma.item.create({
       data: itemData,
@@ -54,15 +64,14 @@ export async function POST(request: Request) {
     // (STOPPED, IN_WAREHOUSE, RELEASED, REGION) და ტელეფონის ველი შევსებულია.
     // SMS-ის ჩავარდნა არ აფუჭებს ნივთის შექმნას.
     let smsSent = item.smsSent;
-    const canNotifyStatus =
+    if (
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
         item.status === "RELEASED" ||
         item.status === "REGION") &&
       !item.smsSent &&
-      item.telefoni;
-
-    if (canNotifyStatus) {
+      item.telefoni
+    ) {
       try {
         const regionName = item.status === "REGION" ? item.kalaki?.trim() : undefined;
         const text = buildStatusSmsText(

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ItemStatusEnum = z.enum(["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"]);
+export const ItemStatusEnum = z.enum(["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION", "PENDING"]);
 
 export const itemSchema = z.object({
   shtrikhkodi: z.string().min(1, "შტრიხ კოდი სავალდებულოა"),

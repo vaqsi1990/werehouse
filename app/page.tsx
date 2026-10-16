@@ -28,7 +28,7 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
   smsSent: boolean;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +56,9 @@ export default function Home() {
     if (savedCountry === "FRANCE" || savedCountry === "RUSSIA") {
       setCountry(savedCountry);
       setIsAuthenticated(isCountryAuthenticated(savedCountry));
+      if (savedCountry === "RUSSIA") {
+        setActiveSection("pending");
+      }
     }
     setCheckingCountry(false);
     setCheckingAuth(false);
@@ -65,6 +68,7 @@ export default function Home() {
     localStorage.setItem("country", next);
     setCountry(next);
     setIsAuthenticated(isCountryAuthenticated(next));
+    setActiveSection(next === "RUSSIA" ? "pending" : "in-warehouse");
   };
 
   const handleChangeCountry = () => {
@@ -80,13 +84,16 @@ export default function Home() {
   };
 
   // Map activeSection to Prisma status
-  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | null => {
-    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION"> = {
+  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING" | null => {
+    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING"> = {
       stopped: "STOPPED",
       "in-warehouse": "IN_WAREHOUSE",
       shipped: "RELEASED",
       region: "REGION",
     };
+    if (country === "RUSSIA") {
+      mapping.pending = "PENDING";
+    }
     return mapping[section] || null;
   };
 
@@ -278,7 +285,7 @@ export default function Home() {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
+  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => {
     try {
       const item = items.find((i) => i.id === id);
       const itemProductNumber = item?.shtrikhkodi || "ნივთი";
@@ -288,6 +295,7 @@ export default function Home() {
         IN_WAREHOUSE: "საწყობშია",
         RELEASED: "გაცემულია",
         REGION: "რეგიონი",
+        PENDING: "მოლოდინში",
       };
 
       console.log("Updating status for item:", id, "to:", newStatus);
@@ -325,13 +333,14 @@ export default function Home() {
     }
   };
 
-  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION") => {
+  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => {
     try {
       const statusLabels: Record<string, string> = {
         STOPPED: "გაჩერებული",
         IN_WAREHOUSE: "საწყობშია",
         RELEASED: "გაცემულია",
         REGION: "რეგიონი",
+        PENDING: "მოლოდინში",
       };
 
       // Update all items in parallel
@@ -422,6 +431,7 @@ export default function Home() {
   const itemsInWarehouse = items.filter((i) => i.status === "IN_WAREHOUSE").length;
   const itemsReleased = items.filter((i) => i.status === "RELEASED").length;
   const itemsRegion = items.filter((i) => i.status === "REGION").length;
+  const itemsPending = items.filter((i) => i.status === "PENDING").length;
 
   const getSectionTitle = () => {
     const titles: Record<string, string> = {
@@ -429,6 +439,7 @@ export default function Home() {
       stopped: "გაჩერებული",
       shipped: "გაცემული",
       region: "რეგიონი",
+      pending: "მოლოდინში",
     };
     return titles[activeSection] || "ინვენტარი";
   };
@@ -472,6 +483,7 @@ export default function Home() {
         onSectionChange={setActiveSection}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        country={country}
       />
       <div className={`flex-1 w-full transition-all duration-300 ${isSidebarOpen ? "lg:ml-56" : "lg:ml-0"} overflow-hidden`}>
         <Header
@@ -482,7 +494,7 @@ export default function Home() {
         <main className="p-4 overflow-x-hidden">
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${country === "RUSSIA" ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-4 lg:gap-6`}>
               <StatsCard
                 title="სულ ამანათები"
                 value={totalItems}
@@ -503,6 +515,28 @@ export default function Home() {
                 }
                 color="blue"
               />
+              {country === "RUSSIA" && (
+                <StatsCard
+                  title="მოლოდინში"
+                  value={itemsPending}
+                  icon={
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  }
+                  color="orange"
+                />
+              )}
               <StatsCard
                 title="საწყობში"
                 value={itemsInWarehouse}
@@ -638,7 +672,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ამანათების სია</h2>
               <div className="flex items-center gap-3 flex-wrap">
-              {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region") && (
+              {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region" || (country === "RUSSIA" && activeSection === "pending")) && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -692,6 +726,7 @@ export default function Home() {
               onStatusChange={handleStatusChange}
               onBulkStatusChange={handleBulkStatusChange}
               showEmptyMessage={country === "FRANCE"}
+              country={country}
             />
             
             {/* Pagination Controls */}
@@ -787,7 +822,7 @@ export default function Home() {
             )}
           </div>
 
-          {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region") && (
+          {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region" || (country === "RUSSIA" && activeSection === "pending")) && (
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
@@ -798,6 +833,7 @@ export default function Home() {
                 onBulkAdd={handleBulkAddProducts}
                 onClose={() => setIsModalOpen(false)}
                 activeSection={activeSection}
+                country={country}
               />
             </Modal>
           )}
@@ -813,6 +849,7 @@ export default function Home() {
             >
               <EditItemForm
                 item={editingItem}
+                country={country}
                 onUpdate={handleUpdateProduct}
                 onClose={() => {
                   setIsEditModalOpen(false);

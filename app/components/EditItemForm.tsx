@@ -14,16 +14,17 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
 }
 
 interface EditItemFormProps {
   item: Item;
   onUpdate: (id: string, data: ItemFormData) => void;
   onClose?: () => void;
+  country?: "FRANCE" | "RUSSIA";
 }
 
-export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormProps) {
+export default function EditItemForm({ item, onUpdate, onClose, country }: EditItemFormProps) {
   const [formData, setFormData] = useState({
     shtrikhkodi: item.shtrikhkodi,
     gamomcemeli: item.gamomcemeli,
@@ -248,6 +249,7 @@ export default function EditItemForm({ item, onUpdate, onClose }: EditItemFormPr
           <option value="IN_WAREHOUSE">საწყობშია</option>
           <option value="RELEASED">გაცემულია</option>
           <option value="REGION">რეგიონი</option>
+          {country === "RUSSIA" && <option value="PENDING">მოლოდინში</option>}
         </select>
         {errors.status && (
           <p className="mt-1 text-[16px] text-red-500">{errors.status}</p>
