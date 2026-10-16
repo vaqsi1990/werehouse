@@ -67,9 +67,7 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
         </button>
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">საწყობის მართვა</h1>
-          <p className="text-gray-600">
-            {country === "RUSSIA" ? "რუსეთი" : "საფრანგეთი"} — გთხოვთ შეიყვანოთ პაროლი შესასვლელად
-          </p>
+          
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
