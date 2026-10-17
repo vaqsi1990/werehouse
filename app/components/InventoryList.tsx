@@ -304,13 +304,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             </button>
             {onBulkStatusChange && (
               <>
-                <button
-                  type="button"
-                  onClick={() => handleBulkStatusChange("IN_WAREHOUSE")}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-[15px]"
-                >
-                  {country === "RUSSIA" ? labelForStatus("IN_WAREHOUSE", country, lang) : "საწყობში"}
-                </button>
+              
                 <select
                   onChange={(e) => handleBulkStatusChange(e.target.value as ItemStatus)}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
