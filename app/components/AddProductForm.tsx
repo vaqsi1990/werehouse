@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { itemSchema, type ItemFormData } from "../lib/validations";
+import { mapExcelRow, parseRussianWrittenDate } from "../lib/excelColumns";
+import { createItemSchema, type ItemFormData } from "../lib/validations";
 import { todayDateLabel } from "../lib/dates";
 import { statusForSection } from "../lib/statuses";
+import { useT, useLang } from "./LanguageProvider";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import mammoth from "mammoth";
@@ -19,6 +21,8 @@ interface AddProductFormProps {
 type FormMode = "manual" | "file";
 
 export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSection, country }: AddProductFormProps) {
+  const t = useT();
+  const lang = useLang();
   const [mode, setMode] = useState<FormMode>("manual");
   const [formData, setFormData] = useState({
     shtrikhkodi: "",
@@ -53,7 +57,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
     const defaultStatus = statusForSection(activeSection, country);
     
     try {
-      const validatedData = itemSchema.parse({
+      const validatedData = createItemSchema(lang).parse({
         ...formData,
         status: defaultStatus,
       });
@@ -106,175 +110,35 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           const items: ItemFormData[] = [];
           
           if (jsonData.length === 0) {
-            reject(new Error("Excel ფაილი ცარიელია"));
+            reject(new Error(t("excelEmpty")));
             return;
           }
 
-          // Expected columns: shtrikhkodi, gamomcemeli, mimgebi, telefoni, tsona, kalaki, sakGadakhda, tarighi
-          // Try to auto-detect column mapping
           const headers = Object.keys(jsonData[0] || {});
-          
-          // Debug: Log headers and first row to see what Excel is returning
-          if (jsonData.length > 0) {
-            console.log("Excel headers:", headers);
-            console.log("First row sample:", JSON.stringify(jsonData[0], null, 2));
-          }
-          
-          // Create a case-insensitive lookup map with normalized keys
-          const createLookupMap = (row: any) => {
-            const map: Record<string, any> = {};
-            Object.keys(row).forEach(key => {
-              // Store original key
-              map[key] = row[key];
-              // Store lowercase version
-              map[key.toLowerCase()] = row[key];
-              // Store normalized version (remove extra spaces, special chars)
-              const normalized = key.toLowerCase().replace(/\s+/g, ' ').trim();
-              map[normalized] = row[key];
-              // Store without spaces
-              map[key.toLowerCase().replace(/\s+/g, '')] = row[key];
-              // Store without dots
-              map[key.toLowerCase().replace(/\./g, '')] = row[key];
-              // Store without spaces and dots
-              map[key.toLowerCase().replace(/\s+/g, '').replace(/\./g, '')] = row[key];
-            });
-            return map;
-          };
           
           jsonData.forEach((row, index) => {
             try {
-              // Skip empty rows
               const rowValues = Object.values(row).filter(v => v !== null && v !== undefined && String(v).trim() !== "");
               if (rowValues.length === 0) return;
 
-              const rowMap = createLookupMap(row);
-              
-              // Try different possible column names (case-insensitive, with normalization)
-              // Returns string or number (for Excel serial dates)
-              const getValue = (keys: string[], returnNumber = false): string | number | undefined => {
-                for (const key of keys) {
-                  // Try exact match first
-                  if (rowMap[key] !== undefined) {
-                    const value = rowMap[key];
-                    if (value !== null && value !== undefined) {
-                      // For dates, return number if it's a number (Excel serial date)
-                      if (returnNumber && typeof value === 'number') {
-                        return value;
-                      }
-                      const strValue = String(value).trim();
-                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
-                        return strValue;
-                      }
-                    }
-                  }
-                  // Try case-insensitive match
-                  const lowerKey = key.toLowerCase();
-                  if (rowMap[lowerKey] !== undefined) {
-                    const value = rowMap[lowerKey];
-                    if (value !== null && value !== undefined) {
-                      if (returnNumber && typeof value === 'number') {
-                        return value;
-                      }
-                      const strValue = String(value).trim();
-                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
-                        return strValue;
-                      }
-                    }
-                  }
-                  // Try normalized match (remove spaces)
-                  const normalizedKey = lowerKey.replace(/\s+/g, '');
-                  if (rowMap[normalizedKey] !== undefined) {
-                    const value = rowMap[normalizedKey];
-                    if (value !== null && value !== undefined) {
-                      if (returnNumber && typeof value === 'number') {
-                        return value;
-                      }
-                      const strValue = String(value).trim();
-                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
-                        return strValue;
-                      }
-                    }
-                  }
-                  // Try without dots
-                  const noDotsKey = lowerKey.replace(/\./g, '');
-                  if (rowMap[noDotsKey] !== undefined) {
-                    const value = rowMap[noDotsKey];
-                    if (value !== null && value !== undefined) {
-                      if (returnNumber && typeof value === 'number') {
-                        return value;
-                      }
-                      const strValue = String(value).trim();
-                      if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
-                        return strValue;
-                      }
-                    }
-                  }
-                  // Try partial match - check if any header contains the key
-                  const headerKeys = Object.keys(row);
-                  for (const headerKey of headerKeys) {
-                    const normalizedHeader = headerKey.toLowerCase().replace(/\s+/g, '').replace(/\./g, '');
-                    const normalizedSearch = lowerKey.replace(/\s+/g, '').replace(/\./g, '');
-                    if (normalizedHeader.includes(normalizedSearch) || normalizedSearch.includes(normalizedHeader)) {
-                      const value = row[headerKey];
-                      if (value !== null && value !== undefined) {
-                        if (returnNumber && typeof value === 'number') {
-                          return value;
-                        }
-                        const strValue = String(value).trim();
-                        if (strValue !== "" && strValue !== "null" && strValue !== "undefined") {
-                          return strValue;
-                        }
-                      }
-                    }
-                  }
-                }
-                return undefined;
+              const mapped = mapExcelRow(row as Record<string, unknown>);
+              const cellText = (value: unknown) => {
+                if (value === null || value === undefined) return undefined;
+                const text = String(value).trim();
+                if (text === "" || text === "null" || text === "undefined") return undefined;
+                return text;
               };
 
-              const shtrikhkodi = getValue(["შტრიხ კოდი", "shtrikhkodi", "mtrikhkodi", "productNumber", "Product Code", "product code", "კოდი", "A", "A1"]);
-              const gamomcemeli = getValue(["გამომგზავნი", "გამომგზავნი", "gamomcemeli", "Sender", "sender", "B", "B1"]);
-              const mimgebi = getValue(["მიმღები", "mimgebi", "Receiver", "receiver", "Name", "name", "სახელი", "C", "C1"]);
-              const telefoni = getValue(["ტელეფონი", "telefoni", "phone", "Phone", "ტელ", "D", "D1"]);
-              const tsona = getValue(["წონა", "tsona", "weight", "Weight", "წონა (kg)", "E", "E1"]);
-              const kalaki = getValue(["ქალაქი", "kalaki", "city", "City", "F", "F1"]);
-              const sakGadakhda = getValue(["საქ.გადახდა", "საქ გადახდა", "საქგადახდა", "sakGadakhda", "sak.gadakhda", "sak gadakhda", "sakgadakhda", "Payment", "payment", "გადახდა", "G", "G1"]);
-              
-              // Get tarighi from Excel - Excel might return dates as serial numbers, strings, or Date objects
-              // Try getValue with returnNumber=true to get Excel serial dates
-              let tarighiRaw = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"]);
-              let tarighiRawAsNumber = getValue(["თარიღი", "tarighi", "date", "Date", "H", "H1"], true);
-              
-              // Also try to get directly from row in case getValue didn't find it
-              if (!tarighiRaw && !tarighiRawAsNumber) {
-                const headerKeys = Object.keys(row);
-                for (const key of headerKeys) {
-                  const lowerKey = key.toLowerCase().trim();
-                  if (lowerKey === "თარიღი" || lowerKey.includes("თარიღი") || lowerKey === "tarighi" || lowerKey === "date") {
-                    const value = row[key];
-                    if (value !== undefined && value !== null && value !== "") {
-                      // If it's a Date object, convert to string
-                      if (value instanceof Date) {
-                        const day = value.getDate();
-                        const month = value.getMonth() + 1;
-                        const year = value.getFullYear();
-                        tarighiRaw = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-                      } else if (typeof value === 'number') {
-                        tarighiRawAsNumber = value;
-                      } else {
-                        tarighiRaw = String(value).trim();
-                      }
-                      break;
-                    }
-                  }
-                }
-              }
-              
-              const tarighiValue = tarighiRaw || tarighiRawAsNumber;
-              
-              // Debug logging
-              if (index < 3) {
-                console.log(`Row ${index + 1} - tarighiRaw:`, tarighiRaw, "tarighiRawAsNumber:", tarighiRawAsNumber, "tarighiValue:", tarighiValue, "row keys:", Object.keys(row));
-              }
+              const shtrikhkodi = cellText(mapped.shtrikhkodi);
+              const gamomcemeli = cellText(mapped.gamomcemeli);
+              const mimgebi = cellText(mapped.mimgebi);
+              const telefoni = cellText(mapped.telefoni);
+              const tsona = cellText(mapped.tsona);
+              const kalaki = cellText(mapped.kalaki);
+              const sakGadakhda = cellText(mapped.sakGadakhda);
+              const tarighiValue = mapped.tarighi instanceof Date || typeof mapped.tarighi === "number"
+                ? mapped.tarighi
+                : cellText(mapped.tarighi);
 
               // Convert date from various formats to DD/MM/YYYY format
               // Handles both string formats, Excel serial numbers, and Date objects
@@ -338,6 +202,9 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                     return undefined;
                   }
                   
+                  const russianDate = parseRussianWrittenDate(dateStr);
+                  if (russianDate) return russianDate;
+
                   // Try parsing as Excel date (MM/DD/YYYY or DD/MM/YYYY)
                   const dateParts = dateStr.split(/[\/\-\.]/);
                   if (dateParts.length === 3) {
@@ -390,7 +257,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               if (shtrikhkodi && gamomcemeli && mimgebi && telefoni && tsona && kalaki) {
                 try {
                   const defaultStatus = statusForSection(activeSection, country);
-                  const item = itemSchema.parse({
+                  const item = createItemSchema(lang).parse({
                     shtrikhkodi,
                     gamomcemeli,
                     mimgebi,
@@ -429,8 +296,8 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           });
 
           if (items.length === 0) {
-            const availableHeaders = headers.length > 0 ? headers.join(", ") : "სვეტები ვერ მოიძებნა";
-            reject(new Error(`ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ სვეტების სახელები.\n\nმოსალოდნელი სვეტები: შტრიხ კოდი, გამომგზავნი (ან გამომგზავნი), მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი\n\nნაპოვნი სვეტები: ${availableHeaders}`));
+            const availableHeaders = headers.length > 0 ? headers.join(", ") : t("columnsNotFound");
+            reject(new Error(t("excelColumnsMissing", { headers: availableHeaders })));
           } else {
             resolve(items);
           }
@@ -438,7 +305,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           reject(error);
         }
       };
-      reader.onerror = () => reject(new Error("ფაილის წაკითხვა ვერ მოხერხდა"));
+      reader.onerror = () => reject(new Error(t("fileReadError")));
       reader.readAsArrayBuffer(file);
     });
   };
@@ -466,21 +333,21 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
               lines.forEach(line => {
                 const lowerLine = line.toLowerCase();
-                if (line.includes("შტრიხ კოდი") || lowerLine.includes("product code") || lowerLine.includes("shtrikhkodi") || lowerLine.includes("mtrikhkodi") || lowerLine.includes("productnumber")) {
+                if (line.includes("შტრიხ კოდი") || lowerLine.includes("штрихкод") || lowerLine.includes("product code") || lowerLine.includes("shtrikhkodi") || lowerLine.includes("mtrikhkodi") || lowerLine.includes("productnumber")) {
                   data.shtrikhkodi = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("გამომგზავნი") || line.includes("გამომგზავნი") || lowerLine.includes("sender") || lowerLine.includes("gamomcemeli")) {
+                } else if (line.includes("გამომგზავნი") || lowerLine.includes("отправитель") || lowerLine.includes("sender") || lowerLine.includes("gamomcemeli")) {
                   data.gamomcemeli = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("მიმღები") || lowerLine.includes("receiver") || lowerLine.includes("mimgebi") || lowerLine.includes("name")) {
+                } else if (line.includes("მიმღები") || lowerLine.includes("получатель") || lowerLine.includes("receiver") || lowerLine.includes("mimgebi") || lowerLine.includes("name")) {
                   data.mimgebi = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("ტელეფონი") || lowerLine.includes("telefoni") || lowerLine.includes("phone")) {
+                } else if (line.includes("ტელეფონი") || lowerLine.includes("телефон") || lowerLine.includes("telefoni") || lowerLine.includes("phone")) {
                   data.telefoni = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("წონა") || lowerLine.includes("tsona") || lowerLine.includes("weight")) {
+                } else if (line.includes("წონა") || lowerLine.includes("вес") || lowerLine.includes("tsona") || lowerLine.includes("weight")) {
                   data.tsona = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("ქალაქი") || lowerLine.includes("kalaki") || lowerLine.includes("city")) {
+                } else if (line.includes("ქალაქი") || lowerLine.includes("город") || lowerLine.includes("kalaki") || lowerLine.includes("city")) {
                   data.kalaki = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("საქ.გადახდა") || line.includes("საქ გადახდა") || line.includes("საქგადახდა") || line.includes("გადახდა") || lowerLine.includes("sakgadakhda") || lowerLine.includes("sak.gadakhda") || lowerLine.includes("sak gadakhda") || lowerLine.includes("payment")) {
+                } else if (line.includes("საქ.გადახდა") || line.includes("საქ გადახდა") || line.includes("საქგადახდა") || line.includes("გადახდა") || lowerLine.includes("оплата") || lowerLine.includes("sakgadakhda") || lowerLine.includes("sak.gadakhda") || lowerLine.includes("sak gadakhda") || lowerLine.includes("payment")) {
                   data.sakGadakhda = line.split(/[:：]/)[1]?.trim() || "";
-                } else if (line.includes("თარიღი") || lowerLine.includes("tarighi") || lowerLine.includes("date")) {
+                } else if (line.includes("თარიღი") || lowerLine.includes("дата") || lowerLine.includes("tarighi") || lowerLine.includes("date")) {
                   data.tarighi = line.split(/[:：]/)[1]?.trim() || "";
                 }
               });
@@ -561,7 +428,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
               if (data.shtrikhkodi && data.gamomcemeli && data.mimgebi && data.telefoni && data.tsona && data.kalaki && data.sakGadakhda) {
                 const defaultStatus = statusForSection(activeSection, country);
-                const item = itemSchema.parse({
+                const item = createItemSchema(lang).parse({
                   ...data,
                   tarighi: convertDateToDDMMYYYY(data.tarighi),
                   status: defaultStatus,
@@ -574,7 +441,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           });
 
           if (items.length === 0) {
-            reject(new Error("ფაილში ვერ მოიძებნა სწორი მონაცემები. გთხოვთ შეამოწმოთ ფორმატი."));
+            reject(new Error(t("wordFormatError")));
           } else {
             resolve(items);
           }
@@ -582,7 +449,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           reject(error);
         }
       };
-      reader.onerror = () => reject(new Error("ფაილის წაკითხვა ვერ მოხერხდა"));
+      reader.onerror = () => reject(new Error(t("fileReadError")));
       reader.readAsArrayBuffer(file);
     });
   };
@@ -603,7 +470,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
       } else if (fileExtension === "docx" || fileExtension === "doc") {
         items = await parseWordFile(file);
       } else {
-        setFileError("მხარდაჭერილია მხოლოდ Excel (.xlsx, .xls) და Word (.docx, .doc) ფაილები");
+        setFileError(t("fileTypeError"));
         setIsUploading(false);
         return;
       }
@@ -615,7 +482,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         }
       }
     } catch (error: any) {
-      setFileError(error.message || "ფაილის დამუშავება ვერ მოხერხდა");
+      setFileError(error.message || t("fileProcessError"));
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -636,7 +503,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               : "text-gray-600 hover:text-gray-800"
           }`}
         >
-          ხელით შეყვანა
+          {t("manualEntry")}
         </button>
         <button
           type="button"
@@ -647,7 +514,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               : "text-gray-600 hover:text-gray-800"
           }`}
         >
-          ფაილის ატვირთვა
+          {t("fileUpload")}
         </button>
       </div>
 
@@ -655,7 +522,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          შტრიხ კოდი <span className="text-red-500">*</span>
+          {t("barcode")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -673,7 +540,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გამომგზავნი <span className="text-red-500">*</span>
+          {t("sender")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -691,7 +558,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          მიმღები <span className="text-red-500">*</span>
+          {t("receiver")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -709,7 +576,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ტელეფონი <span className="text-red-500">*</span>
+          {t("phone")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -727,7 +594,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          წონა (kg) <span className="text-red-500">*</span>
+          {t("weightKg")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -736,7 +603,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.tsona ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: 2.5"
+          placeholder={t("weightExample")}
         />
         {errors.tsona && (
           <p className="mt-1 text-[16px] text-red-500">{errors.tsona}</p>
@@ -745,7 +612,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ქალაქი <span className="text-red-500">*</span>
+          {t("city")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -763,7 +630,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          საქ.გადახდა <span className="text-red-500">*</span>
+          {t("payment")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -781,7 +648,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          თარიღი
+          {t("date")}
         </label>
         {country === "RUSSIA" ? (
           <>
@@ -791,7 +658,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               readOnly
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-gray-50"
             />
-            <p className="mt-1 text-[14px] text-gray-500">თარიღი ავტომატურად იწერება დამატების დღეს</p>
+            <p className="mt-1 text-[14px] text-gray-500">{t("dateAutoAdd")}</p>
           </>
         ) : (
           <>
@@ -817,13 +684,13 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
             >
-              გაუქმება
+              {t("cancel")}
             </button>
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              დამატება
+              {t("add")}
             </button>
           </div>
         </form>
@@ -831,7 +698,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         <div className="space-y-4">
           <div>
             <label className="block text-[16px] font-medium text-gray-700 mb-2">
-              ატვირთეთ Excel ან Word ფაილი
+              {t("uploadFile")}
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
@@ -862,10 +729,10 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                   />
                 </svg>
                 <span className="text-[16px] text-gray-600">
-                  {isUploading ? "იტვირთება..." : "დააწექით ატვირთვისთვის ან გადაიტანეთ ფაილი აქ"}
+                  {isUploading ? t("loading") : t("dropFile")}
                 </span>
                 <span className="text-sm text-gray-500">
-                  მხარდაჭერილი: .xlsx, .xls, .docx, .doc
+                  {t("supported")}
                 </span>
               </label>
             </div>
@@ -873,13 +740,13 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               <p className="mt-2 text-[16px] text-red-500">{fileError}</p>
             )}
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-700 font-medium mb-2">Excel ფაილის ფორმატი:</p>
+              <p className="text-sm text-gray-700 font-medium mb-2">{t("excelFormat")}</p>
               <p className="text-xs text-gray-600">
-                სვეტები: შტრიხ კოდი, გამომგზავნი, მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი
+                {t("excelColumns")}
               </p>
               {country === "RUSSIA" && (
                 <p className="text-xs text-gray-600 mt-2">
-                  თარიღი ავტომატურად იწერება ატვირთვის დღეს.
+                  {t("dateAutoUpload")}
                 </p>
               )}
             </div>
@@ -890,7 +757,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
             >
-              გაუქმება
+              {t("cancel")}
             </button>
           </div>
         </div>

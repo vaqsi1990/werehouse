@@ -83,8 +83,12 @@ export function buildStatusSmsText(
   status: SmsItemStatus,
   shtrikhkodi: string,
   regionName?: string,
-  origin: ParcelOrigin = "FRANCE"
+  origin: ParcelOrigin = "FRANCE",
+  lang: "ka" | "ru" = "ka"
 ): string {
+  if (lang === "ru") {
+    return buildRussianStatusSmsText(status, shtrikhkodi, origin);
+  }
   const code = shtrikhkodi || "ამანათი";
   const from = origin === "RUSSIA" ? "რუსეთიდან" : "საფრანგეთიდან";
 
@@ -149,14 +153,58 @@ export function buildStatusSmsText(
   return "";
 }
 
+function buildRussianStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, origin: ParcelOrigin) {
+  const code = shtrikhkodi || "посылка";
+  const from = origin === "RUSSIA" ? "из России" : "из Франции";
+  const contact = `По дополнительным вопросам звоните (+995) 591 357 357. Спасибо, что пользуетесь нашими услугами💜`;
+
+  if (status === "IN_WAREHOUSE") {
+    return (
+      `Postifly сообщает, что на ваше имя ${from} прибыла посылка с кодом ${code}. ` +
+      `Пожалуйста, приходите в наш офис, чтобы забрать посылку. ` +
+      `Адрес: г. Тбилиси, Гагарина 4-4а, часы работы: каждый день, кроме воскресенья, с 11:00 до 19:00. ` +
+      `По вопросам курьерской доставки или другим вопросам звоните (+995) 591 357 357. ` +
+      `Спасибо, что пользуетесь нашими услугами💜`
+    );
+  }
+  if (status === "STOPPED") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} задержана на таможне. ${contact}`;
+  }
+  if (status === "RELEASED") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} выдана. Спасибо, что пользуетесь нашими услугами💜`;
+  }
+  if (status === "REGION") {
+    return (
+      `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} будет отправлена в регион. ` +
+      `Посылку получите по адресу в течение 2–3 рабочих дней. ${contact}`
+    );
+  }
+  if (status === "PENDING") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} находится в ожидании. ${contact}`;
+  }
+  if (status === "IN_TRANSIT") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} находится в пути. ${contact}`;
+  }
+  if (status === "FOR_HANDOVER") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} вывезена со склада для выдачи. ${contact}`;
+  }
+  return "";
+}
+
 /** Keeps each parcel's own code when a shared Russia SMS text is edited. */
 export function applyParcelCode(text: string, sampleCode: string, parcelCode: string) {
   const marker = sampleCode.trim();
   const nextCode = parcelCode.trim();
   if (!marker || !nextCode || marker === nextCode) return text;
-  const token = `კოდით ${marker}`;
-  if (!text.includes(token)) return text;
-  return text.replace(token, `კოდით ${nextCode}`);
+  const pairs: Array<[string, string]> = [
+    [`კოდით ${marker}`, `კოდით ${nextCode}`],
+    [`с кодом ${marker}`, `с кодом ${nextCode}`],
+  ];
+  let result = text;
+  for (const [from, to] of pairs) {
+    if (result.includes(from)) result = result.replace(from, to);
+  }
+  return result;
 }
 
 export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {

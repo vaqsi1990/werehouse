@@ -2,14 +2,19 @@
 
 import { useState } from "react";
 import { toast } from "react-toastify";
+import type { Lang } from "../lib/i18n";
+import { LanguageSwitch, useT } from "./LanguageProvider";
 
 interface LoginFormProps {
   onLogin: () => void;
   onBack: () => void;
   country: "FRANCE" | "RUSSIA";
+  lang?: Lang;
+  onLangChange?: (lang: Lang) => void;
 }
 
-export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) {
+export default function LoginForm({ onLogin, onBack, country, lang = "ka", onLangChange }: LoginFormProps) {
+  const t = useT();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +23,7 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
     e.preventDefault();
     
     if (!password.trim()) {
-      toast.error("გთხოვთ შეიყვანოთ პაროლი");
+      toast.error(t("enterPassword"));
       return;
     }
 
@@ -36,16 +41,16 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem(`authenticated-${country}`, "true");
-        toast.success("წარმატებით შეხვედით სისტემაში");
+        toast.success(t("loginSuccess"));
         onLogin();
       } else {
         const errorData = await response.json();
-        toast.error(errorData.message || "პაროლი არასწორია");
+        toast.error(errorData.message || t("wrongPassword"));
         setPassword("");
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("შეცდომა შესვლისას");
+      toast.error(t("loginError"));
       setPassword("");
     } finally {
       setLoading(false);
@@ -55,6 +60,11 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        {country === "RUSSIA" && onLangChange && (
+          <div className="mb-6 flex justify-end">
+            <LanguageSwitch lang={lang} onChange={onLangChange} />
+          </div>
+        )}
         <button
           type="button"
           onClick={onBack}
@@ -63,17 +73,17 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          უკან
+          {t("back")}
         </button>
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">საწყობის მართვა</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("appTitle")}</h1>
           
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              პაროლი
+              {t("password")}
             </label>
             <div className="relative">
               <input
@@ -81,7 +91,7 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="შეიყვანეთ პაროლი"
+                placeholder={t("passwordPlaceholder")}
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 autoFocus
                 disabled={loading}
@@ -90,7 +100,7 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                aria-label={showPassword ? "პაროლის დამალვა" : "პაროლის ჩვენება"}
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                 disabled={loading}
               >
                 {showPassword ? (
@@ -112,7 +122,7 @@ export default function LoginForm({ onLogin, onBack, country }: LoginFormProps) 
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? "იტვირთება..." : "შესვლა"}
+            {loading ? t("loading") : t("login")}
           </button>
         </form>
       </div>

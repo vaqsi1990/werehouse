@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Modal from "./Modal";
 import { labelForStatus, optionsForCountry, type ItemStatus } from "../lib/statuses";
 import { buildStatusSmsText } from "../lib/sms";
+import { useLang, useT } from "./LanguageProvider";
 
 interface Item {
   id: string;
@@ -36,6 +37,8 @@ interface InventoryListProps {
 }
 
 export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange, showEmptyMessage = true, country }: InventoryListProps) {
+  const lang = useLang();
+  const t = useT();
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsText, setSmsText] = useState("");
@@ -69,7 +72,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
     return `${hours}:${minutes}`;
   };
 
-  const statusOptions = optionsForCountry(country).map((section) => ({
+  const statusOptions = optionsForCountry(country, lang).map((section) => ({
     value: section.status,
     label: section.optionLabel,
   }));
@@ -114,7 +117,8 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             previewItem.status,
             previewItem.shtrikhkodi || "",
             previewItem.status === "REGION" ? previewItem.kalaki?.trim() : undefined,
-            "RUSSIA"
+            "RUSSIA",
+            lang
           )
         );
       }
@@ -131,11 +135,11 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       .map((i) => (i.telefoni != null ? String(i.telefoni).trim() : ""))
       .filter((t) => t !== "");
     if (phones.length === 0) {
-      toast.error("მონიშნულ ნივთებს არ აქვთ ტელეფონის ნომერი.");
+      toast.error(t("noPhones"));
       return;
     }
     if (!smsText.trim()) {
-      toast.error("შეიყვანეთ შეტყობინების ტექსტი.");
+      toast.error(t("enterSmsText"));
       return;
     }
     setSmsSending(true);
@@ -151,19 +155,19 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.message || data.error || "SMS გაგზავნა ვერ მოხერხდა");
+        toast.error(data.message || data.error || t("smsFailed"));
         return;
       }
       if (data.failCount > 0) {
-        toast.warning(`გაიგზავნა: ${data.successCount}, ვერ გაიგზავნა: ${data.failCount}`);
+        toast.warning(t("smsPartial", { success: data.successCount, fail: data.failCount }));
       } else {
-        toast.success(`SMS წარმატებით გაიგზავნა ${data.successCount} მომხმარებელზე.`);
+        toast.success(t("smsSuccess", { count: data.successCount }));
         setSmsModalOpen(false);
         setSmsText("");
         setSelectedItems(new Set());
       }
     } catch {
-      toast.error("SMS გაგზავნა ვერ მოხერხდა");
+      toast.error(t("smsFailed"));
     } finally {
       setSmsSending(false);
     }
@@ -187,8 +191,8 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
-        <p className="text-black text-[16px]">ინვენტარი ცარიელია</p>
-        <p className="text-black text-[16px] mt-2">დაამატეთ პროდუქტები ინვენტარში</p>
+        <p className="text-black text-[16px]">{t("emptyInventory")}</p>
+        <p className="text-black text-[16px] mt-2">{t("addProductsHint")}</p>
       </div>
     );
   }
@@ -203,34 +207,34 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             <p className="text-black text-[16px]">{item.mimgebi}</p>
           </div>
           <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusClass}`}>
-            {labelForStatus(item.status, country)}
+            {labelForStatus(item.status, country, lang)}
           </span>
         </div>
         
         <div className="grid grid-cols-1 gap-2 text-[16px]">
           <div className="flex items-center gap-2">
-            <span className="text-black">გამომგზავნი:</span>
+            <span className="text-black">{t("sender")}:</span>
             <span className="text-black">{item.gamomcemeli}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">ტელეფონი:</span>
+            <span className="text-black">{t("phone")}:</span>
             <span className="text-black">{item.telefoni}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">წონა:</span>
+            <span className="text-black">{t("weight")}:</span>
             <span className="text-black">{item.tsona} kg</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">ქალაქი:</span>
+            <span className="text-black">{t("city")}:</span>
             <span className="text-black">{item.kalaki}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-black">საქ.გადახდა:</span>
+            <span className="text-black">{t("payment")}:</span>
             <span className="text-black break-all">{item.sakGadakhda}</span>
           </div>
           {item.tarighi && (
             <div className="flex items-center gap-2">
-              <span className="text-black">თარიღი:</span>
+              <span className="text-black">{t("date")}:</span>
               <span className="text-black">{item.tarighi}</span>
             </div>
           )}
@@ -238,7 +242,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
 
         {onStatusChange && (
           <div>
-            <label className="block text-[16px] text-black mb-1">სტატუსის შეცვლა</label>
+            <label className="block text-[16px] text-black mb-1">{t("changeStatus")}</label>
             <select
               value={item.status}
               onChange={(e) => {
@@ -262,14 +266,14 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
               onClick={() => onEdit(item.id)}
               className="bg-green-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[16px]"
             >
-              რედაქტირება
+              {t("edit")}
             </button>
           )}
           {onDelete && (
             <button
               onClick={() => onDelete(item.id)}
               className="bg-red-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-[16px] w-10 h-10 flex items-center justify-center"
-              title="წაშლა"
+              title={t("delete")}
             >
               ×
             </button>
@@ -285,7 +289,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       {selectedItems.size > 0 && (
         <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <div className="text-[15px] font-medium text-gray-700">
-            {selectedItems.size} ამანათი მონიშნულია
+            {t("selectedCount", { count: selectedItems.size })}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -296,7 +300,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              SMS გაგზავნა
+              {t("sendSms")}
             </button>
             {onBulkStatusChange && (
               <>
@@ -305,14 +309,14 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                   onClick={() => handleBulkStatusChange("IN_WAREHOUSE")}
                   className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-[15px]"
                 >
-                  {country === "RUSSIA" ? "თბილისის საწყობში" : "საწყობში"}
+                  {country === "RUSSIA" ? labelForStatus("IN_WAREHOUSE", country, lang) : "საწყობში"}
                 </button>
                 <select
                   onChange={(e) => handleBulkStatusChange(e.target.value as ItemStatus)}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                   defaultValue=""
                 >
-                  <option value="" disabled>სტატუსის შეცვლა</option>
+                  <option value="" disabled>{t("changeStatus")}</option>
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -325,7 +329,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
               onClick={() => setSelectedItems(new Set())}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 text-[15px]"
             >
-              გაუქმება
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -334,22 +338,22 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       <Modal
         isOpen={smsModalOpen}
         onClose={() => !smsSending && setSmsModalOpen(false)}
-        title="SMS გაგზავნა მონიშნულ მომხმარებლებზე"
+        title={t("smsTitle")}
       >
         <div className="space-y-4">
           <p className="text-[15px] text-gray-600">
-            ტექსტი გაიგზავნება {smsRecipientCount} მომხმარებელზე.
+            {t("smsWillSend", { count: smsRecipientCount })}
           </p>
           <textarea
             value={smsText}
             onChange={(e) => setSmsText(e.target.value)}
-            placeholder="შეიყვანეთ შეტყობინების ტექსტი..."
+            placeholder={t("smsPlaceholder")}
             rows={country === "RUSSIA" ? 8 : 4}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={smsSending}
           />
           {country === "RUSSIA" && (
-            <p className="text-[14px] text-gray-500">თითო ამანათს თავისი კოდი ეწერება. დანარჩენი ტექსტი ყველას ერთნაირად გაეგზავნება.</p>
+            <p className="text-[14px] text-gray-500">{t("smsCodeNote")}</p>
           )}
           <div className="flex justify-end gap-2">
             <button
@@ -357,7 +361,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
               onClick={() => !smsSending && setSmsModalOpen(false)}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
             >
-              გაუქმება
+              {t("cancel")}
             </button>
             <button
               type="button"
@@ -365,7 +369,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
               disabled={smsSending}
               className="px-4 py-2 bg-green-700 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {smsSending ? "იგზავნება..." : "გაგზავნა"}
+              {smsSending ? t("sending") : t("send")}
             </button>
           </div>
         </div>
@@ -392,34 +396,34 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                     />
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px] font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    შტრიხ კოდი
+                    {t("barcode")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    გამომგზავნი
+                    {t("sender")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    მიმღები
+                    {t("receiver")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[120px]">
-                    ტელეფონი
+                    {t("phone")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[100px]">
-                    წონა
+                    {t("weight")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    ქალაქი
+                    {t("city")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[150px]">
-                    თარიღი
+                    {t("date")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
-                    საქ.გადახდა
+                    {t("payment")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-left text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
-                    საქ. გაცვლა
+                    {t("statusColumn")}
                   </th>
                   <th className="px-4 lg:px-6 py-3 text-right text-[15px]  font-medium text-black uppercase tracking-wider min-w-[140px]">
-                    მოქმედებები
+                    {t("actions")}
                   </th>
                 </tr>
               </thead>
@@ -497,7 +501,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                         <span
                           className={`inline-flex px-2 py-1 text-[15px] font-semibold rounded-full ${statusClass}`}
                         >
-                          {labelForStatus(item.status, country)}
+                          {labelForStatus(item.status, country, lang)}
                         </span>
                       )}
                     </td>
@@ -508,14 +512,14 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                             onClick={() => onEdit(item.id)}
                             className="bg-green-700 cursor-pointer font-bold text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-[15px] whitespace-nowrap"
                           >
-                            რედაქტირება
+                            {t("edit")}
                           </button>
                         )}
                         {onDelete && (
                           <button
                             onClick={() => onDelete(item.id)}
                             className="bg-red-600 cursor-pointer  font-bold text-white px-3 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-[20px] w-10 h-10 flex items-center justify-center"
-                            title="წაშლა"
+                            title={t("delete")}
                           >
                             ×
                           </button>

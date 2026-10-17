@@ -1,3 +1,5 @@
+import type { Lang } from "./i18n";
+
 export const ITEM_STATUSES = [
   "STOPPED",
   "IN_WAREHOUSE",
@@ -44,12 +46,31 @@ const RUSSIA_SECTIONS: StatusSection[] = [
 
 const FRANCE_OPTION_ORDER: ItemStatus[] = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"];
 
-export function sectionsForCountry(country?: string | null) {
-  return country === "RUSSIA" ? RUSSIA_SECTIONS : FRANCE_SECTIONS;
+const RUSSIA_LABELS_RU: Record<ItemStatus, string> = {
+  PENDING: "Ожидание",
+  IN_TRANSIT: "В пути",
+  STOPPED: "В зоне таможенного контроля",
+  IN_WAREHOUSE: "На складе в Тбилиси",
+  FOR_HANDOVER: "Вывезено со склада для выдачи",
+  REGION: "Отправлено в регион для выдачи",
+  RELEASED: "Выдано",
+};
+
+function withLang(sections: StatusSection[], country?: string | null, lang: Lang = "ka") {
+  if (country !== "RUSSIA" || lang !== "ru") return sections;
+  return sections.map((section) => {
+    const label = RUSSIA_LABELS_RU[section.status];
+    return { ...section, sectionLabel: label, optionLabel: label };
+  });
 }
 
-export function optionsForCountry(country?: string | null) {
-  const sections = sectionsForCountry(country);
+export function sectionsForCountry(country?: string | null, lang: Lang = "ka") {
+  const sections = country === "RUSSIA" ? RUSSIA_SECTIONS : FRANCE_SECTIONS;
+  return withLang(sections, country, lang);
+}
+
+export function optionsForCountry(country?: string | null, lang: Lang = "ka") {
+  const sections = sectionsForCountry(country, lang);
   if (country === "RUSSIA") return sections;
   return FRANCE_OPTION_ORDER.map((status) => sections.find((section) => section.status === status)!);
 }
@@ -60,15 +81,16 @@ export function statusForSection(sectionId: string | undefined, country?: string
   return country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
 }
 
-export function labelForStatus(status: string, country?: string | null) {
-  const section = sectionsForCountry(country).find((item) => item.status === status);
+export function labelForStatus(status: string, country?: string | null, lang: Lang = "ka") {
+  const section = sectionsForCountry(country, lang).find((item) => item.status === status);
   if (section) return section.optionLabel;
   const fallback = [...RUSSIA_SECTIONS, ...FRANCE_SECTIONS].find((item) => item.status === status);
+  if (country === "RUSSIA" && lang === "ru" && fallback) return RUSSIA_LABELS_RU[fallback.status];
   return fallback?.optionLabel ?? status;
 }
 
-export function sectionTitle(sectionId: string, country?: string | null) {
-  return sectionsForCountry(country).find((section) => section.sectionId === sectionId)?.sectionLabel ?? "ინვენტარი";
+export function sectionTitle(sectionId: string, country?: string | null, lang: Lang = "ka") {
+  return sectionsForCountry(country, lang).find((section) => section.sectionId === sectionId)?.sectionLabel ?? (lang === "ru" ? "Инвентарь" : "ინვენტარი");
 }
 
 export function canAddInSection(sectionId: string, country?: string | null) {

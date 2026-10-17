@@ -5,6 +5,8 @@ import { todayDateLabel } from "@/app/lib/dates";
 import { isRussiaOnlyStatus } from "@/app/lib/statuses";
 import type { Prisma } from "@/app/generated/prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,7 +17,9 @@ export async function GET(request: Request) {
         createdAt: "desc",
       },
     });
-    return NextResponse.json(items);
+    return NextResponse.json(items, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     console.error("Error fetching items:", error);
     return NextResponse.json(

@@ -12,7 +12,9 @@ import EditItemForm from "./components/EditItemForm";
 import Modal from "./components/Modal";
 import LoginForm from "./components/LoginForm";
 import CountrySelect, { type Country } from "./components/CountrySelect";
+import { translate, type Lang } from "./lib/i18n";
 import { canAddInSection, labelForStatus, sectionTitle, sectionsForCountry, type ItemStatus } from "./lib/statuses";
+import { LanguageProvider } from "./components/LanguageProvider";
 
 function isCountryAuthenticated(country: Country) {
   if (localStorage.getItem(`authenticated-${country}`) === "true") return true;
@@ -32,6 +34,7 @@ interface Item {
   tsona: string;
   status: ItemStatus;
   smsSent: boolean;
+  country?: "FRANCE" | "RUSSIA";
   createdAt: string;
   updatedAt: string;
 }
@@ -50,10 +53,16 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [lang, setLang] = useState<Lang>("ka");
   const itemsPerPage = 10;
+  const uiLang: Lang = country === "RUSSIA" ? lang : "ka";
 
   // Check authentication and saved country on mount
   useEffect(() => {
+    const savedLang = localStorage.getItem("russia-lang");
+    if (savedLang === "ru" || savedLang === "ka") {
+      setLang(savedLang);
+    }
     const savedCountry = localStorage.getItem("country");
     if (savedCountry === "FRANCE" || savedCountry === "RUSSIA") {
       setCountry(savedCountry);
@@ -68,6 +77,9 @@ export default function Home() {
 
   const handleSelectCountry = (next: Country) => {
     localStorage.setItem("country", next);
+    setItems([]);
+    setSearchQuery("");
+    setCurrentPage(1);
     setCountry(next);
     setIsAuthenticated(isCountryAuthenticated(next));
     setActiveSection(next === "RUSSIA" ? "pending" : "in-warehouse");
@@ -85,6 +97,11 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
+  const handleLangChange = (next: Lang) => {
+    setLang(next);
+    localStorage.setItem("russia-lang", next);
+  };
+
   const getStatusForSection = (section: string): ItemStatus | null => {
     const match = sectionsForCountry(country).find((item) => item.sectionId === section);
     return match?.status ?? null;
@@ -94,26 +111,36 @@ export default function Home() {
   useEffect(() => {
     if (!country) return;
 
+    let ignore = false;
+    const selectedCountry = country;
+
     const fetchItems = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/items?country=${country}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Fetched items:", data);
-          setItems(data);
-        } else {
+        setItems([]);
+        const response = await fetch(`/api/items?country=${selectedCountry}`, { cache: "no-store" });
+        if (!response.ok) {
           const errorData = await response.json();
           console.error("Failed to fetch items:", errorData);
+          return;
         }
+        const data = await response.json();
+        if (ignore) return;
+        const onlyThisCountry = Array.isArray(data)
+          ? data.filter((item: Item) => item.country === selectedCountry)
+          : [];
+        setItems(onlyThisCountry);
       } catch (error) {
         console.error("Error fetching items:", error);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     fetchItems();
+    return () => {
+      ignore = true;
+    };
   }, [country]);
 
   const handleAddProduct = async (newProduct: ItemFormData) => {
@@ -129,17 +156,19 @@ export default function Home() {
 
       if (response.ok) {
         const newItem = await response.json();
-        setItems((prev) => [newItem, ...prev]);
+        if (newItem.country === country) {
+          setItems((prev) => [newItem, ...prev]);
+        }
         setIsModalOpen(false);
-        toast.success("ნივთი წარმატებით დაემატა!");
+        toast.success(translate(uiLang, "itemAdded"));
       } else {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("Failed to create item:", errorData);
-        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთის დამატება ვერ მოხერხდა"}`);
+        toast.error(translate(uiLang, "errorPrefix", { message: errorData.message || errorData.error || translate(uiLang, "addFailed") }));
       }
     } catch (error) {
       console.error("Error creating item:", error);
-      toast.error("შეცდომა: ნივთის დამატება ვერ მოხერხდა");
+      toast.error(translate(uiLang, "addFailed"));
     }
   };
 
@@ -156,27 +185,27 @@ export default function Home() {
 
       if (response.ok) {
         const result = await response.json();
-        const newItems = result.items || [];
+        const newItems = (result.items || []).filter((item: Item) => item.country === country);
         setItems((prev) => [...newItems, ...prev]);
         setIsModalOpen(false);
-        toast.success(`${newItems.length} ნივთი წარმატებით დაემატა!`);
+        toast.success(translate(uiLang, "itemsAdded", { count: newItems.length }));
       } else {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("Failed to create items:", errorData);
-        toast.error(`შეცდომა: ${errorData.message || errorData.error || "ნივთების დამატება ვერ მოხერხდა"}`);
+        toast.error(translate(uiLang, "errorPrefix", { message: errorData.message || errorData.error || translate(uiLang, "bulkAddFailed") }));
       }
     } catch (error) {
       console.error("Error creating items:", error);
-      toast.error("შეცდომა: ნივთების დამატება ვერ მოხერხდა");
+      toast.error(translate(uiLang, "bulkAddFailed"));
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     const item = items.find((i) => i.id === id);
-    const itemProductNumber = item?.shtrikhkodi || "ნივთი";
+    const itemProductNumber = item?.shtrikhkodi || translate(uiLang, "itemWord");
     
     const confirmed = window.confirm(
-      `დარწმუნებული ხართ რომ გსურთ წაშალოთ "${itemProductNumber}"?`
+      translate(uiLang, "deleteConfirm", { name: itemProductNumber })
     );
     
     if (!confirmed) {
@@ -190,14 +219,14 @@ export default function Home() {
 
       if (response.ok) {
         setItems((prev) => prev.filter((item) => item.id !== id));
-        toast.success(`"${itemProductNumber}" წარმატებით წაიშალა`);
+        toast.success(translate(uiLang, "itemDeleted", { name: itemProductNumber }));
       } else {
         console.error("Failed to delete item");
-        toast.error("შეცდომა: ნივთის წაშლა ვერ მოხერხდა");
+        toast.error(translate(uiLang, "deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      toast.error("შეცდომა: ნივთის წაშლა ვერ მოხერხდა");
+      toast.error(translate(uiLang, "deleteFailed"));
     }
   };
 
@@ -205,12 +234,12 @@ export default function Home() {
     const totalCount = filteredItems.length;
     
     if (totalCount === 0) {
-      toast.info("წასაშლელი ნივთები არ არის");
+      toast.info(translate(uiLang, "nothingToDelete"));
       return;
     }
 
     const confirmed = window.confirm(
-      `დარწმუნებული ხართ რომ გსურთ წაშალოთ ყველა ${totalCount} ნივთი ამ სექციიდან? ეს მოქმედება შეუქცევადია!`
+      translate(uiLang, "deleteAllConfirm", { count: totalCount })
     );
     
     if (!confirmed) {
@@ -232,13 +261,13 @@ export default function Home() {
         // Remove deleted items from state
         const deletedIds = filteredItems.map((item) => item.id);
         setItems((prev) => prev.filter((item) => !deletedIds.includes(item.id)));
-        toast.success(`ყველა ${totalCount} ნივთი წარმატებით წაიშალა`);
+        toast.success(translate(uiLang, "allDeleted", { count: totalCount }));
       } else {
-        toast.error("ზოგიერთი ნივთის წაშლა ვერ მოხერხდა");
+        toast.error(translate(uiLang, "someDeleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting all items:", error);
-      toast.error("შეცდომა: ნივთების წაშლა ვერ მოხერხდა");
+      toast.error(translate(uiLang, "deleteAllFailed"));
     }
   };
 
@@ -267,21 +296,21 @@ export default function Home() {
         );
         setIsEditModalOpen(false);
         setEditingItem(null);
-        toast.success("ნივთი წარმატებით განახლდა!");
+        toast.success(translate(uiLang, "itemUpdated"));
       } else {
         console.error("Failed to update item");
-        toast.error("შეცდომა: ნივთის განახლება ვერ მოხერხდა");
+        toast.error(translate(uiLang, "updateFailed"));
       }
     } catch (error) {
       console.error("Error updating item:", error);
-      toast.error("შეცდომა: ნივთის განახლება ვერ მოხერხდა");
+      toast.error(translate(uiLang, "updateFailed"));
     }
   };
 
   const handleStatusChange = async (id: string, newStatus: ItemStatus) => {
     try {
       const item = items.find((i) => i.id === id);
-      const itemProductNumber = item?.shtrikhkodi || "ნივთი";
+      const itemProductNumber = item?.shtrikhkodi || translate(uiLang, "itemWord");
 
       console.log("Updating status for item:", id, "to:", newStatus);
       const response = await fetch(`/api/items/${id}`, {
@@ -300,7 +329,7 @@ export default function Home() {
         setItems((prev) =>
           prev.map((item) => (item.id === id ? updatedItem : item))
         );
-        toast.success(`"${itemProductNumber}"-ის სტატუსი შეიცვალა: ${labelForStatus(newStatus, country)}`);
+        toast.success(translate(uiLang, "statusChanged", { name: itemProductNumber, status: labelForStatus(newStatus, country, uiLang) }));
       } else {
         const errorText = await response.text();
         let errorData;
@@ -310,11 +339,11 @@ export default function Home() {
           errorData = { error: errorText || "Unknown error" };
         }
         console.error("Failed to update status:", response.status, errorData);
-        toast.error(`შეცდომა: ${errorData.message || errorData.error || "უცნობი შეცდომა"}`);
+        toast.error(translate(uiLang, "errorPrefix", { message: errorData.message || errorData.error || translate(uiLang, "unknownError") }));
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      toast.error("შეცდომა სტატუსის განახლებისას");
+      toast.error(translate(uiLang, "statusChangeFailed"));
     }
   };
 
@@ -351,21 +380,22 @@ export default function Home() {
             return item;
           })
         );
-        toast.success(`${ids.length} ამანათის სტატუსი შეიცვალა: ${labelForStatus(newStatus, country)}`);
+        toast.success(translate(uiLang, "bulkStatusChanged", { count: ids.length, status: labelForStatus(newStatus, country, uiLang) }));
       } else {
-        toast.error("ზოგიერთი ამანათის სტატუსის განახლება ვერ მოხერხდა");
+        toast.error(translate(uiLang, "someStatusFailed"));
       }
     } catch (error) {
       console.error("Error updating bulk status:", error);
-      toast.error("შეცდომა სტატუსების განახლებისას");
+      toast.error(translate(uiLang, "bulkStatusFailed"));
     }
   };
 
   const statusForSection = getStatusForSection(activeSection);
+  const countryItems = items.filter((item) => item.country === country);
   
   // Filter items by status and search query
   const filteredItems = (statusForSection
-    ? items.filter((item) => item.status === statusForSection)
+    ? countryItems.filter((item) => item.status === statusForSection)
     : []
   ).filter((item) => {
     if (!searchQuery.trim()) return true;
@@ -404,32 +434,32 @@ export default function Home() {
   console.log("Total items:", items.length);
   console.log("Filtered items:", filteredItems.length);
 
-  const totalItems = items.length;
-  const itemsStopped = items.filter((i) => i.status === "STOPPED").length;
-  const itemsInWarehouse = items.filter((i) => i.status === "IN_WAREHOUSE").length;
-  const itemsReleased = items.filter((i) => i.status === "RELEASED").length;
-  const itemsRegion = items.filter((i) => i.status === "REGION").length;
+  const totalItems = countryItems.length;
+  const itemsStopped = countryItems.filter((i) => i.status === "STOPPED").length;
+  const itemsInWarehouse = countryItems.filter((i) => i.status === "IN_WAREHOUSE").length;
+  const itemsReleased = countryItems.filter((i) => i.status === "RELEASED").length;
+  const itemsRegion = countryItems.filter((i) => i.status === "REGION").length;
 
-  const getSectionTitle = () => sectionTitle(activeSection, country);
+  const getSectionTitle = () => sectionTitle(activeSection, country, uiLang);
 
   const handleDownloadExcel = () => {
-    const rows = items.filter((item) => item.status === statusForSection);
+    const rows = countryItems.filter((item) => item.status === statusForSection);
     if (!statusForSection || rows.length === 0) {
-      toast.error("ამ სტატუსში ამანათი არ არის");
+      toast.error(translate(uiLang, "emptyStatus"));
       return;
     }
     const title = getSectionTitle();
     const sheet = XLSX.utils.json_to_sheet(
       rows.map((item) => ({
-        "შტრიხ კოდი": item.shtrikhkodi,
-        "გამომგზავნი": item.gamomcemeli,
-        "მიმღები": item.mimgebi,
-        "ტელეფონი": item.telefoni,
-        "წონა": item.tsona,
-        "ქალაქი": item.kalaki,
-        "საქ.გადახდა": item.sakGadakhda,
-        "თარიღი": item.tarighi ?? "",
-        "სტატუსი": labelForStatus(item.status, "RUSSIA"),
+        [translate(uiLang, "excelBarcode")]: item.shtrikhkodi,
+        [translate(uiLang, "excelSender")]: item.gamomcemeli,
+        [translate(uiLang, "excelReceiver")]: item.mimgebi,
+        [translate(uiLang, "excelPhone")]: item.telefoni,
+        [translate(uiLang, "excelWeight")]: item.tsona,
+        [translate(uiLang, "excelCity")]: item.kalaki,
+        [translate(uiLang, "excelPayment")]: item.sakGadakhda,
+        [translate(uiLang, "excelDate")]: item.tarighi ?? "",
+        [translate(uiLang, "excelStatus")]: labelForStatus(item.status, "RUSSIA", uiLang),
       }))
     );
     sheet["!cols"] = [
@@ -444,7 +474,7 @@ export default function Home() {
       { wch: 36 },
     ];
     const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, "ამანათები");
+    XLSX.utils.book_append_sheet(book, sheet, translate(uiLang, "excelSheet").slice(0, 31));
     XLSX.writeFile(book, `${title}.xlsx`);
   };
 
@@ -454,7 +484,7 @@ export default function Home() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">იტვირთება...</p>
+          <p className="mt-4 text-gray-600">{translate(uiLang, "loading")}</p>
         </div>
       </div>
     );
@@ -466,7 +496,17 @@ export default function Home() {
 
   // Show login form if not authenticated
   if (!isAuthenticated) {
-    return <LoginForm country={country} onLogin={handleLogin} onBack={handleChangeCountry} />;
+    return (
+      <LanguageProvider lang={uiLang}>
+        <LoginForm
+          country={country}
+          lang={uiLang}
+          onLangChange={country === "RUSSIA" ? handleLangChange : undefined}
+          onLogin={handleLogin}
+          onBack={handleChangeCountry}
+        />
+      </LanguageProvider>
+    );
   }
 
   if (loading) {
@@ -474,13 +514,14 @@ export default function Home() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">იტვირთება...</p>
+          <p className="mt-4 text-gray-600">{translate(uiLang, "loading")}</p>
         </div>
       </div>
     );
   }
 
   return (
+    <LanguageProvider lang={uiLang}>
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar 
         activeSection={activeSection} 
@@ -494,13 +535,15 @@ export default function Home() {
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           country={country}
           onChangeCountry={handleChangeCountry}
+          lang={uiLang}
+          onLangChange={country === "RUSSIA" ? handleLangChange : undefined}
         />
         <main className="p-4 overflow-x-hidden">
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
             <div className={`grid grid-cols-1 sm:grid-cols-2 ${country === "RUSSIA" ? "xl:grid-cols-4" : "lg:grid-cols-5"} gap-4 lg:gap-6`}>
               <StatsCard
-                title="სულ ამანათები"
+                title={translate(uiLang, "totalParcels")}
                 value={totalItems}
                 icon={
                   <svg
@@ -520,11 +563,11 @@ export default function Home() {
                 color="blue"
               />
               {country === "RUSSIA" ? (
-                sectionsForCountry("RUSSIA").map((section) => (
+                sectionsForCountry("RUSSIA", uiLang).map((section) => (
                   <StatsCard
                     key={section.status}
                     title={section.sectionLabel}
-                    value={items.filter((item) => item.status === section.status).length}
+                    value={countryItems.filter((item) => item.status === section.status).length}
                     icon={
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -632,7 +675,7 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="ძებნა: ამანათის ნომერი, სახელი, გვარი, ტელეფონი, ქალაქი, მისამართი, წონა (kg)..."
+                  placeholder={translate(uiLang, "searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
@@ -654,7 +697,7 @@ export default function Home() {
                   <button
                     onClick={() => setSearchQuery("")}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="გასუფთავება"
+                    title={translate(uiLang, "clear")}
                   >
                     <svg
                       className="w-5 h-5"
@@ -675,7 +718,7 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">ამანათების სია</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{translate(uiLang, "parcelList")}</h2>
               <div className="flex items-center gap-3 flex-wrap">
               {canAddInSection(activeSection, country) && (
                   <button
@@ -695,7 +738,7 @@ export default function Home() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    ახალი ამანათის დამატება
+                    {translate(uiLang, "addParcel")}
                   </button>
                 )}
                 {country === "RUSSIA" && (
@@ -716,7 +759,7 @@ export default function Home() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M4 12V7a3 3 0 013-3h6l5 5v3"
                       />
                     </svg>
-                    ექსელის გადმოწერა
+                    {translate(uiLang, "downloadExcel")}
                   </button>
                 )}
                 {filteredItems.length > 0 && (
@@ -737,7 +780,7 @@ export default function Home() {
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                    ყველას წაშლა
+                    {translate(uiLang, "deleteAll")}
                   </button>
                 )}
              
@@ -843,7 +886,7 @@ export default function Home() {
             {/* Pagination Info */}
             {filteredItems.length > 0 && (
               <div className="mt-4 text-center text-gray-600 text-sm">
-                ნაჩვენებია {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} {filteredItems.length}-დან
+                {translate(uiLang, "showing", { from: startIndex + 1, to: Math.min(endIndex, filteredItems.length), total: filteredItems.length })}
               </div>
             )}
           </div>
@@ -852,7 +895,7 @@ export default function Home() {
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              title="ახალი ამანათის დამატება"
+              title={translate(uiLang, "addParcel")}
             >
               <AddProductForm 
                 onAdd={handleAddProduct} 
@@ -871,7 +914,7 @@ export default function Home() {
                 setIsEditModalOpen(false);
                 setEditingItem(null);
               }}
-              title="ამანათის რედაქტირება"
+              title={translate(uiLang, "editParcel")}
             >
               <EditItemForm
                 item={editingItem}
@@ -887,5 +930,6 @@ export default function Home() {
         </main>
       </div>
     </div>
+    </LanguageProvider>
   );
 }

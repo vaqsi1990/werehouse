@@ -59,6 +59,7 @@ export async function PUT(
     }
 
     const data = { ...body };
+    delete data.country;
     if (existing.country === "RUSSIA" && body.status && body.status !== existing.status) {
       data.tarighi = todayDateLabel();
     }

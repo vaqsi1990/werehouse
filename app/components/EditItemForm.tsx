@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { itemSchema, type ItemFormData } from "../lib/validations";
+import { createItemSchema, type ItemFormData } from "../lib/validations";
 import { todayDateLabel } from "../lib/dates";
 import { optionsForCountry, type ItemStatus } from "../lib/statuses";
+import { useLang, useT } from "./LanguageProvider";
 import { z } from "zod";
 
 interface Item {
@@ -27,6 +28,8 @@ interface EditItemFormProps {
 }
 
 export default function EditItemForm({ item, onUpdate, onClose, country }: EditItemFormProps) {
+  const t = useT();
+  const lang = useLang();
   const [formData, setFormData] = useState({
     shtrikhkodi: item.shtrikhkodi,
     gamomcemeli: item.gamomcemeli,
@@ -76,7 +79,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
     e.preventDefault();
     
     try {
-      const validatedData = itemSchema.parse(formData);
+      const validatedData = createItemSchema(lang).parse(formData);
       onUpdate(item.id, validatedData);
       
       if (onClose) {
@@ -99,7 +102,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          შტრიხ კოდი <span className="text-red-500">*</span>
+          {t("barcode")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -117,7 +120,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          გამომგზავნი <span className="text-red-500">*</span>
+          {t("sender")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -135,7 +138,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          მიმღები <span className="text-red-500">*</span>
+          {t("receiver")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -153,7 +156,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ტელეფონი <span className="text-red-500">*</span>
+          {t("phone")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -171,7 +174,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          წონა (kg) <span className="text-red-500">*</span>
+          {t("weightKg")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -180,7 +183,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-black ${
             errors.tsona ? "border-red-500" : "border-gray-300"
           }`}
-          placeholder="მაგ: 2.5"
+          placeholder={t("weightExample")}
         />
         {errors.tsona && (
           <p className="mt-1 text-[16px] text-red-500">{errors.tsona}</p>
@@ -189,7 +192,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          ქალაქი <span className="text-red-500">*</span>
+          {t("city")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -207,7 +210,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          საქ.გადახდა <span className="text-red-500">*</span>
+          {t("payment")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -225,7 +228,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          თარიღი
+          {t("date")}
         </label>
         <input
           type="text"
@@ -238,7 +241,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
           } ${country === "RUSSIA" && formData.status !== item.status ? "bg-gray-50" : ""}`}
         />
         {country === "RUSSIA" && formData.status !== item.status && (
-          <p className="mt-1 text-[14px] text-gray-500">სტატუსის შეცვლისას თარიღი ავტომატურად იწერება</p>
+          <p className="mt-1 text-[14px] text-gray-500">{t("dateAutoStatus")}</p>
         )}
         {errors.tarighi && (
           <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
@@ -247,7 +250,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
 
       <div>
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
-          სტატუსი <span className="text-red-500">*</span>
+          {t("status")} <span className="text-red-500">*</span>
         </label>
         <select
           value={formData.status}
@@ -256,7 +259,7 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
             errors.status ? "border-red-500" : "border-gray-300"
           }`}
         >
-          {optionsForCountry(country).map((section) => (
+          {optionsForCountry(country, lang).map((section) => (
             <option key={section.status} value={section.status}>
               {section.optionLabel}
             </option>
@@ -273,13 +276,13 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
           onClick={onClose}
           className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
         >
-          გაუქმება
+          {t("cancel")}
         </button>
         <button
           type="submit"
           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
-          განახლება
+          {t("update")}
         </button>
       </div>
     </form>

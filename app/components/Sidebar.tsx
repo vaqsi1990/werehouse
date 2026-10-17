@@ -1,6 +1,7 @@
 "use client";
 
 import { sectionsForCountry } from "../lib/statuses";
+import { useLang, useT } from "./LanguageProvider";
 
 interface SidebarProps {
   activeSection: string;
@@ -30,7 +31,9 @@ function sectionIcon(sectionId: string) {
 }
 
 export default function Sidebar({ activeSection, onSectionChange, isOpen, onClose, country }: SidebarProps) {
-  const menuItems = sectionsForCountry(country).map((section) => ({
+  const lang = useLang();
+  const t = useT();
+  const menuItems = sectionsForCountry(country, lang).map((section) => ({
     id: section.sectionId,
     label: section.sectionLabel,
     icon: sectionIcon(section.sectionId),
@@ -68,7 +71,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onClos
                   d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                 />
               </svg>
-              <h1 className="text-[16px] font-bold truncate">საწყობი</h1>
+              <h1 className="text-[16px] font-bold truncate">{t("warehouse")}</h1>
             </div>
             {/* Close button */}
             <button
