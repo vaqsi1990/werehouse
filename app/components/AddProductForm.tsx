@@ -745,9 +745,12 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
                 {t("excelColumns")}
               </p>
               {country === "RUSSIA" && (
-                <p className="text-xs text-gray-600 mt-2">
-                  {t("dateAutoUpload")}
-                </p>
+                <>
+                  <p className="text-xs text-gray-600 mt-2">{t("excelLatin")}</p>
+                  <p className="text-xs text-gray-600 mt-2">
+                    {t("dateAutoUpload")}
+                  </p>
+                </>
               )}
             </div>
           </div>

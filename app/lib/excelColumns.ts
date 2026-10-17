@@ -26,9 +26,51 @@ const ALIASES: Record<ExcelField, string[]> = {
     "productcode",
     "shtrikhkodi",
     "mtrikhkodi",
+    "shtrix kodi",
+    "shtrixkodi",
+    "shtrikh kodi",
+    "shtrihkodi",
+    "shtrih kod",
+    "shtrikhkod",
+    "shtrixkod",
+    "shtrihkod",
+    "kodi",
+    "code",
+    "trek",
+    "nomer posylki",
+    "nomer posilki",
+    "kod posylki",
   ],
-  gamomcemeli: ["გამომგზავნი", "отправитель", "отправитель груза", "sender", "gamomcemeli"],
-  mimgebi: ["მიმღები", "სახელი", "получатель", "имя получателя", "фио", "имя", "receiver", "name", "mimgebi"],
+  gamomcemeli: [
+    "გამომგზავნი",
+    "отправитель",
+    "отправитель груза",
+    "sender",
+    "gamomcemeli",
+    "gamomgzavni",
+    "gamomzavni",
+    "otpravitel",
+    "otpravitel gruza",
+  ],
+  mimgebi: [
+    "მიმღები",
+    "სახელი",
+    "получатель",
+    "имя получателя",
+    "фио",
+    "имя",
+    "receiver",
+    "name",
+    "mimgebi",
+    "mimghebi",
+    "saxeli",
+    "sakheli",
+    "poluchatel",
+    "fio",
+    "imya",
+    "imia",
+    "imja",
+  ],
   telefoni: [
     "ტელეფონი",
     "ტელ",
@@ -38,9 +80,15 @@ const ALIASES: Record<ExcelField, string[]> = {
     "тел",
     "phone",
     "telefoni",
+    "telefon",
+    "tel",
+    "nomer telefona",
+    "mobilny",
+    "mobilnyy",
+    "mobilnyi",
   ],
-  tsona: ["წონა (kg)", "წონა", "вес (кг)", "вес (kg)", "вес кг", "вес", "weight", "tsona"],
-  kalaki: ["ქალაქი", "город", "city", "kalaki"],
+  tsona: ["წონა (kg)", "წონა", "вес (кг)", "вес (kg)", "вес кг", "вес", "weight", "tsona", "wona", "cona", "ves", "ves kg"],
+  kalaki: ["ქალაქი", "город", "city", "kalaki", "qalaqi", "gorod"],
   sakGadakhda: [
     "საქ.გადახდა",
     "საქ გადახდა",
@@ -53,8 +101,18 @@ const ALIASES: Record<ExcelField, string[]> = {
     "стоимость",
     "payment",
     "sakgadakhda",
+    "gadaxda",
+    "gadakhda",
+    "gadakda",
+    "sakgadaxda",
+    "sak gadaxda",
+    "sak.gadaxda",
+    "oplata",
+    "k oplate",
+    "summa",
+    "stoimost",
   ],
-  tarighi: ["თარიღი", "дата", "date", "tarighi"],
+  tarighi: ["თარიღი", "дата", "date", "tarighi", "tarigi", "data"],
 };
 
 const BY_LETTER: Record<string, ExcelField> = {
@@ -80,14 +138,129 @@ export function normalizeExcelHeader(value: string) {
   return value
     .toLowerCase()
     .replace(/ё/g, "е")
+    .replace(/['’`ʼ]/g, "")
     .replace(/[\s.\-_()（）/\\:：]+/g, "");
 }
 
-export function matchExcelHeader(header: string): ExcelField | null {
-  const normalized = normalizeExcelHeader(header);
+const CYRILLIC_DIGRAPHS: Array<[string, string]> = [
+  ["shch", "щ"],
+  ["sch", "щ"],
+  ["yo", "ё"],
+  ["zh", "ж"],
+  ["kh", "х"],
+  ["ts", "ц"],
+  ["ch", "ч"],
+  ["sh", "ш"],
+  ["yu", "ю"],
+  ["ya", "я"],
+  ["ye", "е"],
+];
+
+const CYRILLIC_LETTERS: Record<string, string> = {
+  a: "а",
+  b: "б",
+  c: "к",
+  d: "д",
+  e: "е",
+  f: "ф",
+  g: "г",
+  h: "х",
+  i: "и",
+  j: "й",
+  k: "к",
+  l: "л",
+  m: "м",
+  n: "н",
+  o: "о",
+  p: "п",
+  q: "к",
+  r: "р",
+  s: "с",
+  t: "т",
+  u: "у",
+  v: "в",
+  w: "в",
+  x: "х",
+  y: "ы",
+  z: "з",
+};
+
+const GEO_LOWER: Record<string, string> = {
+  a: "ა",
+  b: "ბ",
+  c: "ც",
+  d: "დ",
+  e: "ე",
+  f: "ფ",
+  g: "გ",
+  h: "ჰ",
+  i: "ი",
+  j: "ჯ",
+  k: "კ",
+  l: "ლ",
+  m: "მ",
+  n: "ნ",
+  o: "ო",
+  p: "პ",
+  q: "ქ",
+  r: "რ",
+  s: "ს",
+  t: "თ",
+  u: "უ",
+  v: "ვ",
+  w: "წ",
+  x: "ხ",
+  y: "ყ",
+  z: "ზ",
+};
+
+const GEO_UPPER: Record<string, string> = {
+  C: "ჩ",
+  G: "ღ",
+  J: "ჟ",
+  R: "ღ",
+  S: "შ",
+  T: "ტ",
+  W: "ჭ",
+  Z: "ძ",
+};
+
+/** Russian words typed with Latin letters: shtrihkod, otpravitel. */
+export function transliterateToCyrillic(value: string) {
+  const input = value.toLowerCase().replace(/['’`ʼ]/g, "");
+  let index = 0;
+  let out = "";
+  while (index < input.length) {
+    const digraph = CYRILLIC_DIGRAPHS.find(([latin]) => input.startsWith(latin, index));
+    if (digraph) {
+      out += digraph[1];
+      index += digraph[0].length;
+      continue;
+    }
+    const char = input[index];
+    out += CYRILLIC_LETTERS[char] ?? char;
+    index += 1;
+  }
+  return out;
+}
+
+/** Georgian letters typed while the Latin keyboard was active: STrixkodi, tariRi. */
+export function latinKeyboardToGeorgian(value: string) {
+  let out = "";
+  for (const char of value) {
+    if (GEO_UPPER[char]) out += GEO_UPPER[char];
+    else if (GEO_LOWER[char]) out += GEO_LOWER[char];
+    else if (GEO_LOWER[char.toLowerCase()]) out += GEO_LOWER[char.toLowerCase()];
+    else out += char;
+  }
+  return out;
+}
+
+function scoreNormalizedHeader(normalized: string, allowLetters: boolean) {
   if (!normalized) return null;
-  const letter = BY_LETTER[normalized];
-  if (letter) return letter;
+  if (allowLetters && BY_LETTER[normalized]) {
+    return { field: BY_LETTER[normalized], score: 5000 };
+  }
 
   let best: { field: ExcelField; score: number } | null = null;
   for (const field of Object.keys(ALIASES) as ExcelField[]) {
@@ -100,6 +273,21 @@ export function matchExcelHeader(header: string): ExcelField | null {
       else if (normalized.length >= 4 && normalizedAlias.includes(normalized)) score = normalized.length;
       if (score > (best?.score ?? 0)) best = { field, score };
     }
+  }
+  return best;
+}
+
+export function matchExcelHeader(header: string): ExcelField | null {
+  const forms = [
+    { text: normalizeExcelHeader(header), allowLetters: true },
+    { text: normalizeExcelHeader(transliterateToCyrillic(header)), allowLetters: false },
+    { text: normalizeExcelHeader(latinKeyboardToGeorgian(header)), allowLetters: false },
+  ];
+
+  let best: { field: ExcelField; score: number } | null = null;
+  for (const form of forms) {
+    const found = scoreNormalizedHeader(form.text, form.allowLetters);
+    if (found && found.score > (best?.score ?? 0)) best = found;
   }
   return best?.field ?? null;
 }
