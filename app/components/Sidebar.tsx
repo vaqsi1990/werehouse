@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { sectionsForCountry } from "../lib/statuses";
 
 interface SidebarProps {
   activeSection: string;
@@ -10,82 +10,31 @@ interface SidebarProps {
   country?: "FRANCE" | "RUSSIA";
 }
 
-export default function Sidebar({ activeSection, onSectionChange, isOpen, onClose, country }: SidebarProps) {
-  const pendingItem = {
-    id: "pending",
-    label: "მოლოდინში",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    ),
-  };
+function sectionIcon(sectionId: string) {
+  const path =
+    sectionId === "stopped"
+      ? "M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      : sectionId === "region"
+        ? "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        : sectionId === "shipped"
+          ? "M5 13l4 4L19 7"
+          : sectionId === "pending" || sectionId === "in-transit"
+            ? "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            : "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4";
 
-  const menuItems = [
-    ...(country === "RUSSIA" ? [pendingItem] : []),
-    {
-      id: "in-warehouse",
-      label: "საწყობში",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "stopped",
-      label: "გაჩერებული",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-  
-    {
-      id: "region",
-      label: "რეგიონი",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "shipped",
-      label: "გაცემული",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      ),
-    },
-  ];
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
+    </svg>
+  );
+}
+
+export default function Sidebar({ activeSection, onSectionChange, isOpen, onClose, country }: SidebarProps) {
+  const menuItems = sectionsForCountry(country).map((section) => ({
+    id: section.sectionId,
+    label: section.sectionLabel,
+    icon: sectionIcon(section.sectionId),
+  }));
 
   return (
     <>
@@ -99,7 +48,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onClos
 
       {/* Sidebar */}
       <aside
-        className={`w-56 bg-blue-900 text-white h-screen fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden flex flex-col ${
+        className={`${country === "RUSSIA" ? "w-80" : "w-56"} bg-blue-900 text-white h-screen fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -158,7 +107,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onClos
               }`}
             >
               <span className="flex-shrink-0">{item.icon}</span>
-              <span className="font-medium text-left truncate">{item.label}</span>
+              <span className={`font-medium text-left ${country === "RUSSIA" ? "whitespace-normal leading-tight" : "truncate"}`}>{item.label}</span>
             </button>
           ))}
         </nav>

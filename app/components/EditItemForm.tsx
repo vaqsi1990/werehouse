@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { itemSchema, type ItemFormData } from "../lib/validations";
+import { optionsForCountry, type ItemStatus } from "../lib/statuses";
 import { z } from "zod";
 
 interface Item {
@@ -14,7 +15,7 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
+  status: ItemStatus;
 }
 
 interface EditItemFormProps {
@@ -245,11 +246,11 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
             errors.status ? "border-red-500" : "border-gray-300"
           }`}
         >
-          <option value="STOPPED">გაჩერებული</option>
-          <option value="IN_WAREHOUSE">საწყობშია</option>
-          <option value="RELEASED">გაცემულია</option>
-          <option value="REGION">რეგიონი</option>
-          {country === "RUSSIA" && <option value="PENDING">მოლოდინში</option>}
+          {optionsForCountry(country).map((section) => (
+            <option key={section.status} value={section.status}>
+              {section.optionLabel}
+            </option>
+          ))}
         </select>
         {errors.status && (
           <p className="mt-1 text-[16px] text-red-500">{errors.status}</p>

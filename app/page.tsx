@@ -11,6 +11,7 @@ import EditItemForm from "./components/EditItemForm";
 import Modal from "./components/Modal";
 import LoginForm from "./components/LoginForm";
 import CountrySelect, { type Country } from "./components/CountrySelect";
+import { canAddInSection, labelForStatus, sectionTitle, sectionsForCountry, type ItemStatus } from "./lib/statuses";
 
 function isCountryAuthenticated(country: Country) {
   if (localStorage.getItem(`authenticated-${country}`) === "true") return true;
@@ -28,7 +29,7 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
+  status: ItemStatus;
   smsSent: boolean;
   createdAt: string;
   updatedAt: string;
@@ -83,18 +84,9 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
-  // Map activeSection to Prisma status
-  const getStatusForSection = (section: string): "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING" | null => {
-    const mapping: Record<string, "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING"> = {
-      stopped: "STOPPED",
-      "in-warehouse": "IN_WAREHOUSE",
-      shipped: "RELEASED",
-      region: "REGION",
-    };
-    if (country === "RUSSIA") {
-      mapping.pending = "PENDING";
-    }
-    return mapping[section] || null;
+  const getStatusForSection = (section: string): ItemStatus | null => {
+    const match = sectionsForCountry(country).find((item) => item.sectionId === section);
+    return match?.status ?? null;
   };
 
   // Fetch items from API for the selected country
@@ -285,18 +277,10 @@ export default function Home() {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => {
+  const handleStatusChange = async (id: string, newStatus: ItemStatus) => {
     try {
       const item = items.find((i) => i.id === id);
       const itemProductNumber = item?.shtrikhkodi || "ნივთი";
-      
-      const statusLabels: Record<string, string> = {
-        STOPPED: "გაჩერებული",
-        IN_WAREHOUSE: "საწყობშია",
-        RELEASED: "გაცემულია",
-        REGION: "რეგიონი",
-        PENDING: "მოლოდინში",
-      };
 
       console.log("Updating status for item:", id, "to:", newStatus);
       const response = await fetch(`/api/items/${id}`, {
@@ -315,7 +299,7 @@ export default function Home() {
         setItems((prev) =>
           prev.map((item) => (item.id === id ? updatedItem : item))
         );
-        toast.success(`"${itemProductNumber}"-ის სტატუსი შეიცვალა: ${statusLabels[newStatus]}`);
+        toast.success(`"${itemProductNumber}"-ის სტატუსი შეიცვალა: ${labelForStatus(newStatus, country)}`);
       } else {
         const errorText = await response.text();
         let errorData;
@@ -333,15 +317,8 @@ export default function Home() {
     }
   };
 
-  const handleBulkStatusChange = async (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => {
+  const handleBulkStatusChange = async (ids: string[], newStatus: ItemStatus) => {
     try {
-      const statusLabels: Record<string, string> = {
-        STOPPED: "გაჩერებული",
-        IN_WAREHOUSE: "საწყობშია",
-        RELEASED: "გაცემულია",
-        REGION: "რეგიონი",
-        PENDING: "მოლოდინში",
-      };
 
       // Update all items in parallel
       const updatePromises = ids.map((id) =>
@@ -373,7 +350,7 @@ export default function Home() {
             return item;
           })
         );
-        toast.success(`${ids.length} ამანათის სტატუსი შეიცვალა: ${statusLabels[newStatus]}`);
+        toast.success(`${ids.length} ამანათის სტატუსი შეიცვალა: ${labelForStatus(newStatus, country)}`);
       } else {
         toast.error("ზოგიერთი ამანათის სტატუსის განახლება ვერ მოხერხდა");
       }
@@ -431,18 +408,8 @@ export default function Home() {
   const itemsInWarehouse = items.filter((i) => i.status === "IN_WAREHOUSE").length;
   const itemsReleased = items.filter((i) => i.status === "RELEASED").length;
   const itemsRegion = items.filter((i) => i.status === "REGION").length;
-  const itemsPending = items.filter((i) => i.status === "PENDING").length;
 
-  const getSectionTitle = () => {
-    const titles: Record<string, string> = {
-      "in-warehouse": "საწყობში",
-      stopped: "გაჩერებული",
-      shipped: "გაცემული",
-      region: "რეგიონი",
-      pending: "მოლოდინში",
-    };
-    return titles[activeSection] || "ინვენტარი";
-  };
+  const getSectionTitle = () => sectionTitle(activeSection, country);
 
   // Show loading while checking country and authentication
   if (checkingCountry || checkingAuth) {
@@ -485,7 +452,7 @@ export default function Home() {
         onClose={() => setIsSidebarOpen(false)}
         country={country}
       />
-      <div className={`flex-1 w-full transition-all duration-300 ${isSidebarOpen ? "lg:ml-56" : "lg:ml-0"} overflow-hidden`}>
+      <div className={`flex-1 w-full transition-all duration-300 ${isSidebarOpen ? (country === "RUSSIA" ? "lg:ml-80" : "lg:ml-56") : "lg:ml-0"} overflow-hidden`}>
         <Header
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           country={country}
@@ -494,7 +461,7 @@ export default function Home() {
         <main className="p-4 overflow-x-hidden">
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4 lg:mb-6">{getSectionTitle()}</h2>
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${country === "RUSSIA" ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-4 lg:gap-6`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${country === "RUSSIA" ? "xl:grid-cols-4" : "lg:grid-cols-5"} gap-4 lg:gap-6`}>
               <StatsCard
                 title="სულ ამანათები"
                 value={totalItems}
@@ -515,28 +482,27 @@ export default function Home() {
                 }
                 color="blue"
               />
-              {country === "RUSSIA" && (
-                <StatsCard
-                  title="მოლოდინში"
-                  value={itemsPending}
-                  icon={
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  }
-                  color="orange"
-                />
-              )}
+              {country === "RUSSIA" ? (
+                sectionsForCountry("RUSSIA").map((section) => (
+                  <StatsCard
+                    key={section.status}
+                    title={section.sectionLabel}
+                    value={items.filter((item) => item.status === section.status).length}
+                    icon={
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
+                      </svg>
+                    }
+                    color="blue"
+                  />
+                ))
+              ) : (
+              <>
               <StatsCard
                 title="საწყობში"
                 value={itemsInWarehouse}
@@ -618,6 +584,8 @@ export default function Home() {
                 }
                 color="green"
               />
+              </>
+              )}
             </div>
           </div>
 
@@ -672,7 +640,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-2xl font-bold text-gray-800">ამანათების სია</h2>
               <div className="flex items-center gap-3 flex-wrap">
-              {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region" || (country === "RUSSIA" && activeSection === "pending")) && (
+              {canAddInSection(activeSection, country) && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -822,7 +790,7 @@ export default function Home() {
             )}
           </div>
 
-          {(activeSection === "in-warehouse" || activeSection === "stopped" || activeSection === "region" || (country === "RUSSIA" && activeSection === "pending")) && (
+          {canAddInSection(activeSection, country) && (
             <Modal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}

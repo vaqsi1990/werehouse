@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import Modal from "./Modal";
+import { labelForStatus, optionsForCountry, type ItemStatus } from "../lib/statuses";
 
 interface Item {
   id: string;
@@ -14,7 +15,7 @@ interface Item {
   sakGadakhda: string;
   tarighi?: string | null;
   tsona: string;
-  status: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
+  status: ItemStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,13 +28,11 @@ interface InventoryListProps {
   selectionScopeKey?: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => void;
-  onBulkStatusChange?: (ids: string[], newStatus: "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING") => void;
+  onStatusChange?: (id: string, newStatus: ItemStatus) => void;
+  onBulkStatusChange?: (ids: string[], newStatus: ItemStatus) => void;
   showEmptyMessage?: boolean;
   country?: "FRANCE" | "RUSSIA";
 }
-
-type ItemStatus = "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION" | "PENDING";
 
 export default function InventoryList({ items, allItems, selectionScopeKey, onEdit, onDelete, onStatusChange, onBulkStatusChange, showEmptyMessage = true, country }: InventoryListProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -68,29 +67,12 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
     return `${hours}:${minutes}`;
   };
 
-  const statusLabels: Record<string, string> = {
-    STOPPED: "გაჩერებული",
-    IN_WAREHOUSE: "საწყობშია",
-    RELEASED: "გაცემულია",
-    REGION: "რეგიონი",
-    PENDING: "მოლოდინში",
-  };
+  const statusOptions = optionsForCountry(country).map((section) => ({
+    value: section.status,
+    label: section.optionLabel,
+  }));
 
-  const statusColors: Record<string, string> = {
-    STOPPED: "bg-white text-black border-1 border-black",
-    IN_WAREHOUSE: "bg-white text-black border-1 border-black",
-    RELEASED: "bg-white text-black border-1 border-black",
-    REGION: "bg-white text-black border-1 border-black",
-    PENDING: "bg-white text-black border-1 border-black",
-  };
-
-  const statusOptions: { value: ItemStatus; label: string }[] = [
-    { value: "STOPPED", label: "გაჩერებული" },
-    { value: "IN_WAREHOUSE", label: "საწყობშია" },
-    { value: "RELEASED", label: "გაცემულია" },
-    { value: "REGION", label: "რეგიონი" },
-    ...(country === "RUSSIA" ? [{ value: "PENDING" as const, label: "მოლოდინში" }] : []),
-  ];
+  const statusClass = "bg-white text-black border-1 border-black";
 
   const toggleItemSelection = (id: string) => {
     setSelectedItems((prev) => {
@@ -194,8 +176,8 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
             <h3 className="font-semibold text-black text-[16px] mb-1">{item.shtrikhkodi}</h3>
             <p className="text-black text-[16px]">{item.mimgebi}</p>
           </div>
-          <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusColors[item.status]}`}>
-            {statusLabels[item.status]}
+          <span className={`inline-flex px-2 py-1 text-[16px] font-semibold rounded-full ${statusClass}`}>
+            {labelForStatus(item.status, country)}
           </span>
         </div>
         
@@ -237,7 +219,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                 const newStatus = e.target.value as ItemStatus;
                 onStatusChange(item.id, newStatus);
               }}
-              className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[item.status]}`}
+              className={`w-full px-3 py-2 text-[16px] font-semibold rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusClass}`}
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -297,7 +279,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                   onClick={() => handleBulkStatusChange("IN_WAREHOUSE")}
                   className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-[15px]"
                 >
-                  საწყობში
+                  {country === "RUSSIA" ? "თბილისის საწყობში" : "საწყობში"}
                 </button>
                 <select
                   onChange={(e) => handleBulkStatusChange(e.target.value as ItemStatus)}
@@ -474,7 +456,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                             const newStatus = e.target.value as ItemStatus;
                             onStatusChange(item.id, newStatus);
                           }}
-                          className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusColors[item.status]} w-full max-w-[140px]`}
+                          className={`px-2 lg:px-3 py-1 text-[15px] font-semibold rounded-lg cursor-pointer  ${statusClass} w-full ${country === "RUSSIA" ? "max-w-[280px]" : "max-w-[140px]"}`}
                         >
                           {statusOptions.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -484,9 +466,9 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
                         </select>
                       ) : (
                         <span
-                          className={`inline-flex px-2 py-1 text-[15px] font-semibold rounded-full ${statusColors[item.status]}`}
+                          className={`inline-flex px-2 py-1 text-[15px] font-semibold rounded-full ${statusClass}`}
                         >
-                          {statusLabels[item.status]}
+                          {labelForStatus(item.status, country)}
                         </span>
                       )}
                     </td>

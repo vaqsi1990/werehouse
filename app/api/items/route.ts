@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { isRussiaOnlyStatus } from "@/app/lib/statuses";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 export async function GET(request: Request) {
@@ -48,9 +49,9 @@ export async function POST(request: Request) {
       itemData.status = country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
     }
 
-    if (itemData.status === "PENDING" && country !== "RUSSIA") {
+    if (itemData.status && isRussiaOnlyStatus(itemData.status) && country !== "RUSSIA") {
       return NextResponse.json(
-        { error: "Invalid status", message: "მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა" },
+        { error: "Invalid status", message: "ეს სტატუსი მხოლოდ რუსეთისთვისაა" },
         { status: 400 }
       );
     }

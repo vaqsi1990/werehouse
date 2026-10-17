@@ -11,7 +11,7 @@ const adapter = new PrismaPg({
 })
 
 // Bump after schema changes so the dev server drops a stale Prisma client.
-const PRISMA_CLIENT_VERSION = 3
+const PRISMA_CLIENT_VERSION = 4
 
 const prisma =
   globalForPrisma.prisma && globalForPrisma.prismaClientVersion === PRISMA_CLIENT_VERSION

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { isRussiaOnlyStatus, ITEM_STATUSES } from "@/app/lib/statuses";
 
 export async function DELETE(
   request: Request,
@@ -33,7 +34,7 @@ export async function PUT(
     console.log("Updating item:", id, "with data:", body);
     
     // Validate status if provided
-    const validStatuses = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION", "PENDING"];
+    const validStatuses: string[] = [...ITEM_STATUSES];
     if (body.status && !validStatuses.includes(body.status)) {
       return NextResponse.json(
         { 
@@ -44,14 +45,14 @@ export async function PUT(
       );
     }
 
-    if (body.status === "PENDING") {
+    if (body.status && isRussiaOnlyStatus(body.status)) {
       const existing = await prisma.item.findUnique({ where: { id } });
       if (!existing) {
         return NextResponse.json({ error: "Item not found" }, { status: 404 });
       }
       if (existing.country !== "RUSSIA") {
         return NextResponse.json(
-          { error: "Invalid status", message: "მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა" },
+          { error: "Invalid status", message: "ეს სტატუსი მხოლოდ რუსეთისთვისაა" },
           { status: 400 }
         );
       }

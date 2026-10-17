@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { itemSchema, type ItemFormData } from "../../../lib/validations";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { isRussiaOnlyStatus } from "@/app/lib/statuses";
 import type { Item, Prisma } from "@/app/generated/prisma/client";
 
 export async function POST(request: Request) {
@@ -27,8 +28,8 @@ export async function POST(request: Request) {
           ...items[i],
           status: items[i].status || (country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE"),
         });
-        if (validatedItem.status === "PENDING" && country !== "RUSSIA") {
-          errors.push(`Row ${i + 1}: მოლოდინში სტატუსი მხოლოდ რუსეთისთვისაა`);
+        if (isRussiaOnlyStatus(validatedItem.status) && country !== "RUSSIA") {
+          errors.push(`Row ${i + 1}: ეს სტატუსი მხოლოდ რუსეთისთვისაა`);
           continue;
         }
         validatedItems.push(validatedItem);

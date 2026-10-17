@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "ItemStatus" ADD VALUE 'IN_TRANSIT';
+ALTER TYPE "ItemStatus" ADD VALUE 'FOR_HANDOVER';

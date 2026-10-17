@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { itemSchema, type ItemFormData } from "../lib/validations";
+import { statusForSection } from "../lib/statuses";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import mammoth from "mammoth";
@@ -48,7 +49,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
     e.preventDefault();
     
     // Determine status based on activeSection
-    const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
+    const defaultStatus = statusForSection(activeSection, country);
     
     try {
       const validatedData = itemSchema.parse({
@@ -387,7 +388,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               // Check required fields (sakGadakhda is now optional, can be empty)
               if (shtrikhkodi && gamomcemeli && mimgebi && telefoni && tsona && kalaki) {
                 try {
-                  const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
+                  const defaultStatus = statusForSection(activeSection, country);
                   const item = itemSchema.parse({
                     shtrikhkodi,
                     gamomcemeli,
@@ -558,7 +559,7 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               };
 
               if (data.shtrikhkodi && data.gamomcemeli && data.mimgebi && data.telefoni && data.tsona && data.kalaki && data.sakGadakhda) {
-                const defaultStatus = activeSection === "stopped" ? "STOPPED" : activeSection === "region" ? "REGION" : country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";
+                const defaultStatus = statusForSection(activeSection, country);
                 const item = itemSchema.parse({
                   ...data,
                   tarighi: convertDateToDDMMYYYY(data.tarighi),
