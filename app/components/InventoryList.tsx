@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import Modal from "./Modal";
 import { labelForStatus, optionsForCountry, type ItemStatus } from "../lib/statuses";
+import { buildStatusSmsText } from "../lib/sms";
 
 interface Item {
   id: string;
@@ -103,6 +104,13 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
 
   const handleOpenSmsModal = () => setSmsModalOpen(true);
 
+  const selectedForSms = itemsForSelection.filter((i) => selectedItems.has(i.id));
+  const smsRecipientCount = selectedForSms.filter((i) => (i.telefoni ?? "").toString().trim()).length;
+  const smsPreviewItem = selectedForSms.find((i) => (i.telefoni ?? "").toString().trim());
+  const russiaSmsPreview = smsPreviewItem
+    ? buildStatusSmsText(smsPreviewItem.status, smsPreviewItem.shtrikhkodi || "", smsPreviewItem.status === "REGION" ? smsPreviewItem.kalaki?.trim() : undefined, "RUSSIA")
+    : "";
+
   const handleSendBulkSms = async () => {
     const selected = itemsForSelection.filter((i) => selectedItems.has(i.id));
     const phones = selected
@@ -112,7 +120,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       toast.error("მონიშნულ ნივთებს არ აქვთ ტელეფონის ნომერი.");
       return;
     }
-    if (!smsText.trim()) {
+    if (country !== "RUSSIA" && !smsText.trim()) {
       toast.error("შეიყვანეთ შეტყობინების ტექსტი.");
       return;
     }
@@ -121,7 +129,11 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       const res = await fetch("/api/sms/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: phones, text: smsText.trim() }),
+        body: JSON.stringify(
+          country === "RUSSIA"
+            ? { itemIds: selected.map((item) => item.id) }
+            : { to: phones, text: smsText.trim() }
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -312,16 +324,25 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       >
         <div className="space-y-4">
           <p className="text-[15px] text-gray-600">
-            ტექსტი გაიგზავნება {itemsForSelection.filter((i) => selectedItems.has(i.id)).filter((i) => (i.telefoni ?? "").toString().trim()).length} მომხმარებელზე.
+            ტექსტი გაიგზავნება {smsRecipientCount} მომხმარებელზე.
           </p>
-          <textarea
-            value={smsText}
-            onChange={(e) => setSmsText(e.target.value)}
-            placeholder="შეიყვანეთ შეტყობინების ტექსტი..."
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={smsSending}
-          />
+          {country === "RUSSIA" ? (
+            <>
+              <p className="text-[15px] text-black whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3">
+                {russiaSmsPreview}
+              </p>
+              <p className="text-[14px] text-gray-500">თითო ამანათს თავისი კოდი ეწერება.</p>
+            </>
+          ) : (
+            <textarea
+              value={smsText}
+              onChange={(e) => setSmsText(e.target.value)}
+              placeholder="შეიყვანეთ შეტყობინების ტექსტი..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={smsSending}
+            />
+          )}
           <div className="flex justify-end gap-2">
             <button
               type="button"

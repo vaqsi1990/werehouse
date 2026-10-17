@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import StatsCard from "./components/StatsCard";
@@ -411,6 +412,42 @@ export default function Home() {
 
   const getSectionTitle = () => sectionTitle(activeSection, country);
 
+  const handleDownloadExcel = () => {
+    const rows = items.filter((item) => item.status === statusForSection);
+    if (!statusForSection || rows.length === 0) {
+      toast.error("ამ სტატუსში ამანათი არ არის");
+      return;
+    }
+    const title = getSectionTitle();
+    const sheet = XLSX.utils.json_to_sheet(
+      rows.map((item) => ({
+        "შტრიხ კოდი": item.shtrikhkodi,
+        "გამომგზავნი": item.gamomcemeli,
+        "მიმღები": item.mimgebi,
+        "ტელეფონი": item.telefoni,
+        "წონა": item.tsona,
+        "ქალაქი": item.kalaki,
+        "საქ.გადახდა": item.sakGadakhda,
+        "თარიღი": item.tarighi ?? "",
+        "სტატუსი": labelForStatus(item.status, "RUSSIA"),
+      }))
+    );
+    sheet["!cols"] = [
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 14 },
+      { wch: 36 },
+    ];
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "ამანათები");
+    XLSX.writeFile(book, `${title}.xlsx`);
+  };
+
   // Show loading while checking country and authentication
   if (checkingCountry || checkingAuth) {
     return (
@@ -659,6 +696,27 @@ export default function Home() {
                       />
                     </svg>
                     ახალი ამანათის დამატება
+                  </button>
+                )}
+                {country === "RUSSIA" && (
+                  <button
+                    onClick={handleDownloadExcel}
+                    className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M4 12V7a3 3 0 013-3h6l5 5v3"
+                      />
+                    </svg>
+                    ექსელის გადმოწერა
                   </button>
                 )}
                 {filteredItems.length > 0 && (

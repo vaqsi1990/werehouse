@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       } => {
         const hasPhone = it.telefoni != null && String(it.telefoni).trim() !== "";
         return (
+          it.country !== "RUSSIA" &&
           (it.status === "IN_WAREHOUSE" ||
             it.status === "STOPPED" ||
             it.status === "RELEASED" ||

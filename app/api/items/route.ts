@@ -61,11 +61,10 @@ export async function POST(request: Request) {
     });
     console.log("Item created successfully:", item);
 
-    // ავტომატური SMS გაგზავნა მხოლოდ მაშინ, თუ სტატუსი ერთ-ერთი არსებულიდანაა
-    // (STOPPED, IN_WAREHOUSE, RELEASED, REGION) და ტელეფონის ველი შევსებულია.
-    // SMS-ის ჩავარდნა არ აფუჭებს ნივთის შექმნას.
+    // ავტომატური SMS მხოლოდ საფრანგეთზე. რუსეთში შეტყობინება ხელით იგზავნება.
     let smsSent = item.smsSent;
     if (
+      item.country !== "RUSSIA" &&
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
         item.status === "RELEASED" ||

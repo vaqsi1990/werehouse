@@ -8,7 +8,14 @@ type SendSmsInput = {
   text: string;
 };
 
-export type SmsItemStatus = "STOPPED" | "IN_WAREHOUSE" | "RELEASED" | "REGION";
+export type SmsItemStatus =
+  | "STOPPED"
+  | "IN_WAREHOUSE"
+  | "RELEASED"
+  | "REGION"
+  | "PENDING"
+  | "IN_TRANSIT"
+  | "FOR_HANDOVER";
 export type ParcelOrigin = "FRANCE" | "RUSSIA";
 
 export function parcelOriginFromCountry(country?: string | null): ParcelOrigin {
@@ -110,6 +117,30 @@ export function buildStatusSmsText(
     return (
       `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} გამოგეგზავნებათ რეგიონში. ` +
       `ამანათს მისამართზე მიიღებთ 2-3 სამუშაო დღეში. ` +
+      `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
+      `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
+    );
+  }
+
+  if (status === "PENDING") {
+    return (
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} მოლოდინშია. ` +
+      `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
+      `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
+    );
+  }
+
+  if (status === "IN_TRANSIT") {
+    return (
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} გზაშია. ` +
+      `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
+      `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
+    );
+  }
+
+  if (status === "FOR_HANDOVER") {
+    return (
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} გატანილია საწყობიდან ჩასაბარებლად. ` +
       `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
       `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
     );

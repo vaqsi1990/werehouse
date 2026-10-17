@@ -68,6 +68,7 @@ export async function PUT(
 
     let smsSent = item.smsSent;
     if (
+      item.country !== "RUSSIA" &&
       (item.status === "IN_WAREHOUSE" ||
         item.status === "STOPPED" ||
         item.status === "RELEASED" ||
