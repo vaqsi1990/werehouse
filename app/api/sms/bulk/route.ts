@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/app/lib/prisma";
-import { SmsProviderError, buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe, type SmsItemStatus } from "@/app/lib/sms";
+import { SmsProviderError, applyParcelCode, buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe, type SmsItemStatus } from "@/app/lib/sms";
 
 const sendBulkSmsSchema = z.object({
   to: z.array(z.string().min(1)).min(1, "At least one recipient is required"),
@@ -10,6 +10,8 @@ const sendBulkSmsSchema = z.object({
 
 const sendStatusSmsSchema = z.object({
   itemIds: z.array(z.string().min(1)).min(1, "At least one parcel is required"),
+  text: z.string().min(1).max(2000).optional(),
+  sampleCode: z.string().max(200).optional(),
 });
 
 export async function POST(request: Request) {
@@ -46,12 +48,15 @@ export async function POST(request: Request) {
           failCount++;
           continue;
         }
-        const text = buildStatusSmsText(
+        const generated = buildStatusSmsText(
           item.status as SmsItemStatus,
           item.shtrikhkodi || "",
           item.status === "REGION" ? item.kalaki?.trim() : undefined,
           parcelOriginFromCountry(item.country)
         );
+        const text = statusParsed.data.text
+          ? applyParcelCode(statusParsed.data.text, statusParsed.data.sampleCode ?? "", item.shtrikhkodi || "")
+          : generated;
         if (!text) {
           results.push({ to: phone, success: false, error: "No message for this status" });
           failCount++;

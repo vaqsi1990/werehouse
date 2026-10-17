@@ -149,6 +149,16 @@ export function buildStatusSmsText(
   return "";
 }
 
+/** Keeps each parcel's own code when a shared Russia SMS text is edited. */
+export function applyParcelCode(text: string, sampleCode: string, parcelCode: string) {
+  const marker = sampleCode.trim();
+  const nextCode = parcelCode.trim();
+  if (!marker || !nextCode || marker === nextCode) return text;
+  const token = `კოდით ${marker}`;
+  if (!text.includes(token)) return text;
+  return text.replace(token, `კოდით ${nextCode}`);
+}
+
 export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {
   return buildStatusSmsText("IN_WAREHOUSE", shtrikhkodi);
 }
