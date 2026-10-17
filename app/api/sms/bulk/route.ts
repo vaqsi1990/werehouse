@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/app/lib/prisma";
-import { SmsProviderError, applyParcelCode, buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe, type SmsItemStatus } from "@/app/lib/sms";
+import { SmsProviderError, SMS_CODE_TOKEN, buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe, type SmsItemStatus } from "@/app/lib/sms";
 
 const sendBulkSmsSchema = z.object({
   to: z.array(z.string().min(1)).min(1, "At least one recipient is required"),
@@ -12,6 +12,7 @@ const sendStatusSmsSchema = z.object({
   itemIds: z.array(z.string().min(1)).min(1, "At least one parcel is required"),
   text: z.string().min(1).max(2000).optional(),
   sampleCode: z.string().max(200).optional(),
+  lang: z.enum(["ka", "ru"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -48,14 +49,18 @@ export async function POST(request: Request) {
           failCount++;
           continue;
         }
+        const parcelCode = item.shtrikhkodi?.trim() || "";
+        const smsLang = statusParsed.data.lang === "ru" ? "ru" : "ka";
         const generated = buildStatusSmsText(
           item.status as SmsItemStatus,
-          item.shtrikhkodi || "",
+          parcelCode,
           item.status === "REGION" ? item.kalaki?.trim() : undefined,
-          parcelOriginFromCountry(item.country)
+          parcelOriginFromCountry(item.country),
+          smsLang
         );
-        const text = statusParsed.data.text
-          ? applyParcelCode(statusParsed.data.text, statusParsed.data.sampleCode ?? "", item.shtrikhkodi || "")
+        const edited = statusParsed.data.text?.trim() ?? "";
+        const text = edited.includes(SMS_CODE_TOKEN)
+          ? edited.replaceAll(SMS_CODE_TOKEN, parcelCode || (smsLang === "ru" ? "посылка" : "ამანათი"))
           : generated;
         if (!text) {
           results.push({ to: phone, success: false, error: "No message for this status" });

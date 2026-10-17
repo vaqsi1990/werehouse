@@ -191,20 +191,29 @@ function buildRussianStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, o
   return "";
 }
 
-/** Keeps each parcel's own code when a shared Russia SMS text is edited. */
+export const SMS_CODE_TOKEN = "{{CODE}}";
+
+/** Puts each parcel's own code into the locked slot of an edited Russia SMS. */
+export function insertParcelCode(text: string, parcelCode: string) {
+  const code = parcelCode.trim();
+  if (!code || !text.includes(SMS_CODE_TOKEN)) return text;
+  return text.replaceAll(SMS_CODE_TOKEN, code);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Swaps the preview parcel code for each recipient's own code. */
 export function applyParcelCode(text: string, sampleCode: string, parcelCode: string) {
   const marker = sampleCode.trim();
   const nextCode = parcelCode.trim();
-  if (!marker || !nextCode || marker === nextCode) return text;
-  const pairs: Array<[string, string]> = [
-    [`კოდით ${marker}`, `კოდით ${nextCode}`],
-    [`с кодом ${marker}`, `с кодом ${nextCode}`],
-  ];
-  let result = text;
-  for (const [from, to] of pairs) {
-    if (result.includes(from)) result = result.replace(from, to);
-  }
-  return result;
+  if (!nextCode) return text;
+  if (text.includes("{{CODE}}")) return text.replaceAll("{{CODE}}", nextCode);
+  if (!marker || marker === nextCode) return text;
+
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(marker)}(?![\\p{L}\\p{N}])`, "gu");
+  return text.replace(pattern, () => nextCode);
 }
 
 export function buildWarehouseArrivalSmsText(shtrikhkodi: string) {

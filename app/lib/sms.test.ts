@@ -5,6 +5,8 @@
 
 import {
   normalizePhone,
+  SMS_CODE_TOKEN,
+  insertParcelCode,
   buildStatusSmsText,
   buildWarehouseArrivalSmsText,
   sendSms,
@@ -44,6 +46,21 @@ for (const s of statuses) {
 console.log("\n=== buildWarehouseArrivalSmsText ===");
 const warehouseText = buildWarehouseArrivalSmsText("ABC456");
 log("warehouse arrival", { length: warehouseText.length, preview: warehouseText.slice(0, 60) + "..." });
+
+const shared = buildStatusSmsText("PENDING", SMS_CODE_TOKEN, undefined, "RUSSIA", "ka");
+const edited = shared.replace("მოლოდინშია", "მზადაა");
+const first = insertParcelCode(edited, "CODE-A");
+const second = insertParcelCode(edited, "CODE-B");
+const russian = insertParcelCode(
+  buildStatusSmsText("IN_TRANSIT", SMS_CODE_TOKEN, undefined, "RUSSIA", "ru"),
+  "RU-2"
+);
+if (shared.includes("CODE-A") || !shared.includes(SMS_CODE_TOKEN)) throw new Error("preview shows a real parcel code");
+if (!first.includes("კოდით CODE-A") || first.includes(SMS_CODE_TOKEN)) throw new Error("first code was not inserted");
+if (!second.includes("კოდით CODE-B") || second.includes("CODE-A")) throw new Error("second code was not inserted");
+if (!first.includes("მზადაა") || !second.includes("მზადაა")) throw new Error("edited wording was lost");
+if (!russian.includes("с кодом RU-2") || russian.includes(SMS_CODE_TOKEN)) throw new Error("russian code was not inserted");
+console.log("\n=== insertParcelCode ok ===");
 
 // --- Optional: real send + track (only if env set)
 const sendReal = process.env.SEND_REAL_SMS === "1";

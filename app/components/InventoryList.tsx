@@ -1,11 +1,92 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import Modal from "./Modal";
 import { labelForStatus, optionsForCountry, type ItemStatus } from "../lib/statuses";
-import { buildStatusSmsText } from "../lib/sms";
+import { SMS_CODE_TOKEN, buildStatusSmsText } from "../lib/sms";
 import { useLang, useT } from "./LanguageProvider";
+
+function templateFromEditor(root: HTMLElement) {
+  let out = "";
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      out += node.textContent ?? "";
+      return;
+    }
+    if (node instanceof HTMLElement && node.dataset.code != null) {
+      out += SMS_CODE_TOKEN;
+      return;
+    }
+    if (node instanceof HTMLBRElement) {
+      out += "\n";
+      return;
+    }
+    node.childNodes.forEach(walk);
+  };
+  root.childNodes.forEach(walk);
+  return out;
+}
+
+function paintSmsEditor(root: HTMLElement, template: string, chipLabel: string) {
+  root.replaceChildren();
+  const parts = template.split(SMS_CODE_TOKEN);
+  parts.forEach((part, index) => {
+    root.append(document.createTextNode(part));
+    if (index < parts.length - 1) {
+      const chip = document.createElement("span");
+      chip.dataset.code = "1";
+      chip.contentEditable = "false";
+      chip.className = "mx-0.5 inline-block cursor-default select-none rounded bg-gray-200 px-1.5 py-0.5 text-[13px] font-semibold text-gray-600";
+      chip.textContent = chipLabel;
+      root.append(chip);
+    }
+  });
+}
+
+function SmsTextEditor({
+  value,
+  onChange,
+  disabled,
+  chipLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  chipLabel: string;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const skipSync = useRef(false);
+
+  useEffect(() => {
+    if (!rootRef.current) return;
+    if (skipSync.current) {
+      skipSync.current = false;
+      return;
+    }
+    paintSmsEditor(rootRef.current, value, chipLabel);
+  }, [value, chipLabel]);
+
+  return (
+    <div
+      ref={rootRef}
+      role="textbox"
+      aria-multiline="true"
+      contentEditable={!disabled}
+      suppressContentEditableWarning
+      onInput={(event) => {
+        const next = templateFromEditor(event.currentTarget);
+        if (!next.includes(SMS_CODE_TOKEN)) {
+          paintSmsEditor(event.currentTarget, value, chipLabel);
+          return;
+        }
+        skipSync.current = true;
+        onChange(next);
+      }}
+      className="min-h-40 w-full whitespace-pre-wrap rounded-lg border border-gray-300 px-3 py-2 text-[15px] leading-6 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  );
+}
 
 interface Item {
   id: string;
@@ -42,7 +123,6 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsText, setSmsText] = useState("");
-  const [smsSampleCode, setSmsSampleCode] = useState("");
   const [smsSending, setSmsSending] = useState(false);
 
   const itemsForSelection = allItems ?? items;
@@ -111,11 +191,10 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
       const selected = itemsForSelection.filter((item) => selectedItems.has(item.id));
       const previewItem = selected.find((item) => (item.telefoni ?? "").toString().trim()) ?? selected[0];
       if (previewItem) {
-        setSmsSampleCode(previewItem.shtrikhkodi || "");
         setSmsText(
           buildStatusSmsText(
             previewItem.status,
-            previewItem.shtrikhkodi || "",
+            SMS_CODE_TOKEN,
             previewItem.status === "REGION" ? previewItem.kalaki?.trim() : undefined,
             "RUSSIA",
             lang
@@ -149,7 +228,7 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           country === "RUSSIA"
-            ? { itemIds: selected.map((item) => item.id), text: smsText.trim(), sampleCode: smsSampleCode }
+            ? { itemIds: selected.map((item) => item.id), text: smsText.trim(), lang }
             : { to: phones, text: smsText.trim() }
         ),
       });
@@ -338,14 +417,23 @@ export default function InventoryList({ items, allItems, selectionScopeKey, onEd
           <p className="text-[15px] text-gray-600">
             {t("smsWillSend", { count: smsRecipientCount })}
           </p>
-          <textarea
-            value={smsText}
-            onChange={(e) => setSmsText(e.target.value)}
-            placeholder={t("smsPlaceholder")}
-            rows={country === "RUSSIA" ? 8 : 4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={smsSending}
-          />
+          {country === "RUSSIA" ? (
+            <SmsTextEditor
+              value={smsText}
+              onChange={setSmsText}
+              disabled={smsSending}
+              chipLabel={lang === "ru" ? "код" : "კოდი"}
+            />
+          ) : (
+            <textarea
+              value={smsText}
+              onChange={(e) => setSmsText(e.target.value)}
+              placeholder={t("smsPlaceholder")}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-[15px] text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={smsSending}
+            />
+          )}
           {country === "RUSSIA" && (
             <p className="text-[14px] text-gray-500">{t("smsCodeNote")}</p>
           )}
