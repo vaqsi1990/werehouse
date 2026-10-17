@@ -15,7 +15,8 @@ export type SmsItemStatus =
   | "REGION"
   | "PENDING"
   | "IN_TRANSIT"
-  | "FOR_HANDOVER";
+  | "FOR_HANDOVER"
+  | "TO_RETURN";
 export type ParcelOrigin = "FRANCE" | "RUSSIA";
 
 export function parcelOriginFromCountry(country?: string | null): ParcelOrigin {
@@ -150,6 +151,14 @@ export function buildStatusSmsText(
     );
   }
 
+  if (status === "TO_RETURN") {
+    return (
+      `Postifly გაცნობებთ, რომ თქვენს სახელზე ${from} ჩამოსული ამანათი კოდით ${code} უკან დასაბრუნებელია. ` +
+      `დამატებითი კითხვების შემთხვევაში, გთხოვთ დაგვიკავშირდეთ (+995) 591 357 357. ` +
+      `მადლობას გიხდით, რომ სარგებლობთ ჩვენი მომსახურებით💜`
+    );
+  }
+
   return "";
 }
 
@@ -187,6 +196,9 @@ function buildRussianStatusSmsText(status: SmsItemStatus, shtrikhkodi: string, o
   }
   if (status === "FOR_HANDOVER") {
     return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} вывезена со склада для выдачи. ${contact}`;
+  }
+  if (status === "TO_RETURN") {
+    return `Postifly сообщает, что прибывшая на ваше имя ${from} посылка с кодом ${code} подлежит возврату. ${contact}`;
   }
   return "";
 }

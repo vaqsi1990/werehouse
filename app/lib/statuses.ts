@@ -8,12 +8,13 @@ export const ITEM_STATUSES = [
   "PENDING",
   "IN_TRANSIT",
   "FOR_HANDOVER",
+  "TO_RETURN",
 ] as const;
 
 export type ItemStatus = (typeof ITEM_STATUSES)[number];
 export type CountryCode = "FRANCE" | "RUSSIA";
 
-export const RUSSIA_ONLY_STATUSES = ["PENDING", "IN_TRANSIT", "FOR_HANDOVER"] as const;
+export const RUSSIA_ONLY_STATUSES = ["PENDING", "IN_TRANSIT", "FOR_HANDOVER", "TO_RETURN"] as const;
 
 export function isRussiaOnlyStatus(status: string) {
   return (RUSSIA_ONLY_STATUSES as readonly string[]).includes(status);
@@ -42,6 +43,7 @@ const RUSSIA_SECTIONS: StatusSection[] = [
   { status: "FOR_HANDOVER", sectionId: "for-handover", sectionLabel: "გატანილია საწყობიდან ჩასაბარებლად", optionLabel: "გატანილია საწყობიდან ჩასაბარებლად", canAdd: true },
   { status: "REGION", sectionId: "region", sectionLabel: "გაგზავნილია რეგიონში ჩასაბარებლად", optionLabel: "გაგზავნილია რეგიონში ჩასაბარებლად", canAdd: true },
   { status: "RELEASED", sectionId: "shipped", sectionLabel: "გაცემულია", optionLabel: "გაცემულია", canAdd: false },
+  { status: "TO_RETURN", sectionId: "to-return", sectionLabel: "უკან დასაბრუნებელი ამანათები", optionLabel: "უკან დასაბრუნებელი ამანათები", canAdd: true },
 ];
 
 const FRANCE_OPTION_ORDER: ItemStatus[] = ["STOPPED", "IN_WAREHOUSE", "RELEASED", "REGION"];
@@ -54,6 +56,7 @@ const RUSSIA_LABELS_RU: Record<ItemStatus, string> = {
   FOR_HANDOVER: "Вывезено со склада для выдачи",
   REGION: "Отправлено в регион для выдачи",
   RELEASED: "Выдано",
+  TO_RETURN: "Посылки к возврату",
 };
 
 function withLang(sections: StatusSection[], country?: string | null, lang: Lang = "ka") {
