@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { itemSchema, type ItemFormData } from "../lib/validations";
+import { todayDateLabel } from "../lib/dates";
 import { statusForSection } from "../lib/statuses";
 import { z } from "zod";
 import * as XLSX from "xlsx";
@@ -782,18 +783,31 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
         <label className="block text-[16px] font-medium text-gray-700 mb-1">
           თარიღი
         </label>
-        <input
-          type="text"
-          value={formData.tarighi}
-          onChange={(e) => handleChange("tarighi", e.target.value)}
-          placeholder="DD/MM/YYYY"
-          className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-gray-400 ${
-            errors.tarighi ? "border-red-500" : "border-gray-300"
-          }`}
-     
-        />
-        {errors.tarighi && (
-          <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
+        {country === "RUSSIA" ? (
+          <>
+            <input
+              type="text"
+              value={todayDateLabel()}
+              readOnly
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-gray-50"
+            />
+            <p className="mt-1 text-[14px] text-gray-500">თარიღი ავტომატურად იწერება დამატების დღეს</p>
+          </>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={formData.tarighi}
+              onChange={(e) => handleChange("tarighi", e.target.value)}
+              placeholder="DD/MM/YYYY"
+              className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-gray-400 ${
+                errors.tarighi ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.tarighi && (
+              <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
+            )}
+          </>
         )}
       </div>
 
@@ -863,6 +877,11 @@ export default function AddProductForm({ onAdd, onBulkAdd, onClose, activeSectio
               <p className="text-xs text-gray-600">
                 სვეტები: შტრიხ კოდი, გამომგზავნი, მიმღები, ტელეფონი, წონა, ქალაქი, საქ.გადახდა, თარიღი
               </p>
+              {country === "RUSSIA" && (
+                <p className="text-xs text-gray-600 mt-2">
+                  თარიღი ავტომატურად იწერება ატვირთვის დღეს.
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-3 pt-2">

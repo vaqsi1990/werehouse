@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { todayDateLabel } from "@/app/lib/dates";
 import { isRussiaOnlyStatus } from "@/app/lib/statuses";
 import type { Prisma } from "@/app/generated/prisma/client";
 
@@ -42,8 +43,11 @@ export async function POST(request: Request) {
     } else {
       itemData.tarighi = null;
     }
-    
+
     const country = body.country === "RUSSIA" ? "RUSSIA" : "FRANCE";
+    if (country === "RUSSIA") {
+      itemData.tarighi = todayDateLabel();
+    }
     itemData.country = country;
     if (!itemData.status) {
       itemData.status = country === "RUSSIA" ? "PENDING" : "IN_WAREHOUSE";

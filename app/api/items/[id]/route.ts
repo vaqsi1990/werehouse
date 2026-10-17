@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { todayDateLabel } from "@/app/lib/dates";
 import { isRussiaOnlyStatus, ITEM_STATUSES } from "@/app/lib/statuses";
 
 export async function DELETE(
@@ -45,24 +46,28 @@ export async function PUT(
       );
     }
 
-    if (body.status && isRussiaOnlyStatus(body.status)) {
-      const existing = await prisma.item.findUnique({ where: { id } });
-      if (!existing) {
-        return NextResponse.json({ error: "Item not found" }, { status: 404 });
-      }
-      if (existing.country !== "RUSSIA") {
-        return NextResponse.json(
-          { error: "Invalid status", message: "ეს სტატუსი მხოლოდ რუსეთისთვისაა" },
-          { status: 400 }
-        );
-      }
+    const existing = await prisma.item.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
-    
+
+    if (body.status && isRussiaOnlyStatus(body.status) && existing.country !== "RUSSIA") {
+      return NextResponse.json(
+        { error: "Invalid status", message: "ეს სტატუსი მხოლოდ რუსეთისთვისაა" },
+        { status: 400 }
+      );
+    }
+
+    const data = { ...body };
+    if (existing.country === "RUSSIA" && body.status && body.status !== existing.status) {
+      data.tarighi = todayDateLabel();
+    }
+
     const item = await prisma.item.update({
       where: {
         id: id,
       },
-      data: body,
+      data,
     });
     console.log("Item updated successfully:", item);
 

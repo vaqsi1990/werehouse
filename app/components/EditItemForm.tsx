@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { itemSchema, type ItemFormData } from "../lib/validations";
+import { todayDateLabel } from "../lib/dates";
 import { optionsForCountry, type ItemStatus } from "../lib/statuses";
 import { z } from "zod";
 
@@ -54,7 +55,13 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
   }, [item]);
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (country === "RUSSIA" && field === "status") {
+        next.tarighi = value !== item.status ? todayDateLabel() : item.tarighi || "";
+      }
+      return next;
+    });
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => {
@@ -225,11 +232,14 @@ export default function EditItemForm({ item, onUpdate, onClose, country }: EditI
           value={formData.tarighi}
           onChange={(e) => handleChange("tarighi", e.target.value)}
           placeholder="DD/MM/YYYY"
+          readOnly={country === "RUSSIA" && formData.status !== item.status}
           className={`w-full px-4 py-2 border rounded-lg text-black placeholder:text-gray-400 ${
             errors.tarighi ? "border-red-500" : "border-gray-300"
-          }`}
-    
+          } ${country === "RUSSIA" && formData.status !== item.status ? "bg-gray-50" : ""}`}
         />
+        {country === "RUSSIA" && formData.status !== item.status && (
+          <p className="mt-1 text-[14px] text-gray-500">სტატუსის შეცვლისას თარიღი ავტომატურად იწერება</p>
+        )}
         {errors.tarighi && (
           <p className="mt-1 text-[16px] text-red-500">{errors.tarighi}</p>
         )}

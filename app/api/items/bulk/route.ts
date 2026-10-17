@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { itemSchema, type ItemFormData } from "../../../lib/validations";
 import { buildStatusSmsText, parcelOriginFromCountry, sendSmsViaMsgGe } from "@/app/lib/sms";
+import { todayDateLabel } from "@/app/lib/dates";
 import { isRussiaOnlyStatus } from "@/app/lib/statuses";
 import type { Item, Prisma } from "@/app/generated/prisma/client";
 
@@ -68,7 +69,10 @@ export async function POST(request: Request) {
           } else {
             itemData.tarighi = null;
           }
-          
+          if (country === "RUSSIA") {
+            itemData.tarighi = todayDateLabel();
+          }
+
           itemData.country = country;
           const created = await tx.item.create({
             data: itemData,
